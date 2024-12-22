@@ -1,0 +1,379 @@
+# Web Dependencies Overview
+
+This document covers the Django web framework and related dependencies included in this project.
+
+## Table of Contents
+
+- [Django](#django)
+- [django-axes](#django-axes)
+- [django-csp](#django-csp)
+- [django-cors-headers](#django-cors-headers)
+- [django-health-check](#django-health-check)
+- [django-extensions](#django-extensions)
+- [Argon2](#argon2)
+- [psycopg](#psycopg)
+{%- if cookiecutter.async %}
+- [uvicorn](#uvicorn)
+{%- endif %}
+- [Recommended Additional Packages](#recommended-additional-packages)
+
+---
+
+## Django
+
+The web framework for perfectionists with deadlines.
+
+**Documentation:** https://docs.djangoproject.com/
+
+**Quick reference:**
+
+```python
+# Models
+from django.db import models
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+# Views
+from django.http import JsonResponse
+from django.views import View
+
+class ArticleView(View):
+    def get(self, request, pk):
+        article = Article.objects.get(pk=pk)
+        return JsonResponse({"title": article.title})
+
+# URLs
+from django.urls import path
+urlpatterns = [
+    path("articles/<int:pk>/", ArticleView.as_view()),
+]
+```
+
+---
+
+## django-axes
+
+Brute-force attack protection by tracking failed login attempts.
+
+**Documentation:** https://django-axes.readthedocs.io/
+
+**Configuration (already set up):**
+
+```python
+# In settings.py
+INSTALLED_APPS = [..., "axes"]
+AUTHENTICATION_BACKENDS = [
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Lockout settings
+AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
+AXES_COOLOFF_TIME = 1  # Hours until lockout expires
+AXES_LOCKOUT_TEMPLATE = "account/locked.html"
+```
+
+**Management commands:**
+```shell
+# View access attempts
+uv run python manage.py axes_list_attempts
+
+# Reset lockouts
+uv run python manage.py axes_reset
+uv run python manage.py axes_reset_user username
+uv run python manage.py axes_reset_ip 192.168.1.1
+```
+
+---
+
+## django-csp
+
+Content Security Policy headers to prevent XSS attacks.
+
+**Documentation:** https://django-csp.readthedocs.io/
+
+**Configuration (already set up):**
+
+```python
+# In settings.py
+MIDDLEWARE = [..., "csp.middleware.CSPMiddleware"]
+
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "cdn.example.com")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_IMG_SRC = ("'self'", "data:", "*.example.com")
+CSP_FONT_SRC = ("'self'", "fonts.googleapis.com")
+
+# Report violations
+CSP_REPORT_URI = "/csp-report/"
+```
+
+**Using nonces for inline scripts:**
+
+```python
+# In views
+def my_view(request):
+    return render(request, "template.html")
+
+# In templates
+<script nonce="{{ '{{ request.csp_nonce }}' }}">
+    // Your inline script
+</script>
+```
+
+---
+
+## django-cors-headers
+
+Handle Cross-Origin Resource Sharing (CORS) headers.
+
+**Documentation:** https://github.com/adamchainz/django-cors-headers
+
+**Configuration (already set up):**
+
+```python
+# In settings.py
+INSTALLED_APPS = [..., "corsheaders"]
+MIDDLEWARE = ["corsheaders.middleware.CorsMiddleware", ...]
+
+# Allow specific origins
+CORS_ALLOWED_ORIGINS = [
+    "https://example.com",
+    "https://app.example.com",
+]
+
+# Or allow all origins (not recommended for production)
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Allow credentials (cookies)
+CORS_ALLOW_CREDENTIALS = True
+
+# Custom headers
+CORS_ALLOW_HEADERS = [*default_headers, "X-Custom-Header"]
+```
+
+---
+
+## django-health-check
+
+Health check endpoints for monitoring and container orchestration.
+
+**Documentation:** https://django-health-check.readthedocs.io/
+
+**Configuration (already set up):**
+
+```python
+# In settings.py
+INSTALLED_APPS = [
+    ...,
+    "health_check",
+    "health_check.db",
+    "health_check.cache",
+    "health_check.storage",
+]
+
+# In urls.py
+urlpatterns = [
+    path("health/", include("health_check.urls")),
+]
+```
+
+**Endpoints:**
+- `GET /health/` - Returns 200 if healthy, 500 if unhealthy
+- `GET /health/?format=json` - JSON response with check details
+
+**Custom health checks:**
+
+```python
+from health_check.backends import BaseHealthCheckBackend
+from health_check.exceptions import HealthCheckException
+
+class MyServiceHealthCheck(BaseHealthCheckBackend):
+    critical_service = True
+
+    def check_status(self):
+        if not my_service.is_available():
+            raise HealthCheckException("Service unavailable")
+
+    def identifier(self):
+        return "My Service"
+```
+
+---
+
+## django-extensions
+
+Useful extensions including shell_plus, runserver_plus, and more.
+
+**Documentation:** https://django-extensions.readthedocs.io/
+
+**Useful commands:**
+
+```shell
+# Enhanced shell with auto-imports
+uv run python manage.py shell_plus
+
+# Show all URLs
+uv run python manage.py show_urls
+
+# Generate model graph
+uv run python manage.py graph_models -a -o models.png
+
+# Create a superuser non-interactively
+uv run python manage.py createsuperuser --noinput
+
+# Reset database
+uv run python manage.py reset_db
+
+# Export fixtures
+uv run python manage.py dumpscript myapp.MyModel
+```
+
+---
+
+## Argon2
+
+Secure password hashing (winner of Password Hashing Competition).
+
+**Documentation:** https://argon2-cffi.readthedocs.io/
+
+**Configuration (already set up):**
+
+```python
+# In settings.py - Argon2 is the primary hasher
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    ...
+]
+```
+
+No additional configuration needed - Django uses it automatically for password hashing.
+
+---
+
+## psycopg
+
+PostgreSQL adapter for Python (psycopg 3).
+
+**Documentation:** https://www.psycopg.org/psycopg3/docs/
+
+**Configuration:**
+
+```shell
+DATABASE_URL=postgres://user:password@localhost:5432/dbname
+```
+
+**Direct usage (if needed):**
+
+```python
+import psycopg
+
+# Sync connection
+with psycopg.connect("postgres://user:pass@localhost/db") as conn:
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+
+# Async connection
+async with await psycopg.AsyncConnection.connect("postgres://...") as conn:
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT * FROM users")
+        rows = await cur.fetchall()
+```
+{%- if cookiecutter.async %}
+
+---
+
+## uvicorn
+
+Lightning-fast ASGI server.
+
+**Documentation:** https://www.uvicorn.org/
+
+**Running the server:**
+
+```shell
+# Development with auto-reload
+uv run uvicorn {{cookiecutter.package_name}}_web.asgi:application --reload
+
+# Production
+uv run uvicorn {{cookiecutter.package_name}}_web.asgi:application \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --loop uvloop \
+    --http httptools
+
+# With SSL
+uv run uvicorn {{cookiecutter.package_name}}_web.asgi:application \
+    --ssl-keyfile key.pem \
+    --ssl-certfile cert.pem
+```
+
+**Programmatic usage:**
+
+```python
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "{{cookiecutter.package_name}}_web.asgi:application",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )
+```
+{%- endif %}
+
+---
+
+## Recommended Additional Packages
+
+Consider adding these packages to enhance your Django application:
+
+### Django REST Framework
+
+Powerful toolkit for building Web APIs.
+
+**Installation:** `uv add djangorestframework`
+
+**Documentation:** https://www.django-rest-framework.org/
+
+### django-storages
+
+Custom storage backends (S3, Azure, GCS).
+
+**Installation:** `uv add django-storages[s3]`
+
+**Documentation:** https://django-storages.readthedocs.io/
+
+### django-redis
+
+Redis cache backend.
+
+**Installation:** `uv add django-redis`
+
+**Documentation:** https://github.com/jazzband/django-redis
+
+### Celery
+
+Distributed task queue.
+
+**Installation:** `uv add celery[redis]`
+
+**Documentation:** https://docs.celeryq.dev/
+
+### django-silk
+
+Profiling and inspection tool.
+
+**Installation:** `uv add django-silk`
+
+**Documentation:** https://github.com/jazzband/django-silk

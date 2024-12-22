@@ -1,0 +1,300 @@
+# API Dependencies Overview
+
+This document covers the FastAPI and related dependencies included in this project.
+
+## Table of Contents
+
+- [FastAPI](#fastapi)
+- [pydantic-settings](#pydantic-settings)
+- [uvicorn](#uvicorn)
+{%- if cookiecutter.api_auth %}
+- [python-jose](#python-jose)
+- [passlib](#passlib)
+{%- endif %}
+- [Recommended Additional Packages](#recommended-additional-packages)
+
+---
+
+## FastAPI
+
+Modern, fast web framework for building APIs with Python.
+
+**Documentation:** https://fastapi.tiangolo.com/
+
+**Usage:**
+
+```python
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Item(BaseModel):
+    name: str
+    price: float
+    is_offer: bool = False
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: int, q: str | None = None):
+    return {"item_id": item_id, "q": q}
+
+@app.post("/items/")
+async def create_item(item: Item):
+    return item
+
+# With dependencies
+async def get_db():
+    db = Database()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: int, db = Depends(get_db)):
+    user = db.get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+```
+
+**Running the server:**
+
+```shell
+# Development with auto-reload
+uv run uvicorn {{cookiecutter.package_name}}_api.main:app --reload
+
+# Production
+uv run uvicorn {{cookiecutter.package_name}}_api.main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4
+```
+
+---
+
+## pydantic-settings
+
+Settings management using Pydantic with environment variable support.
+
+**Documentation:** https://docs.pydantic.dev/latest/concepts/pydantic_settings/
+
+**Usage:**
+
+```python
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+    debug: bool = Field(default=False)
+    database_url: str = Field(default="sqlite:///./app.db")
+    secret_key: str = Field(default="change-me")
+    api_prefix: str = Field(default="/api/v1")
+
+    # Nested settings with prefix
+    redis_host: str = Field(default="localhost")
+    redis_port: int = Field(default=6379)
+
+settings = Settings()
+```
+
+**Environment variables:**
+```shell
+DEBUG=true
+DATABASE_URL=postgres://user:pass@localhost/db
+SECRET_KEY=my-secret-key
+REDIS_HOST=redis.example.com
+REDIS_PORT=6380
+```
+
+---
+
+## uvicorn
+
+Lightning-fast ASGI server.
+
+**Documentation:** https://www.uvicorn.org/
+
+**Running the API:**
+
+```shell
+# Development with auto-reload
+uv run uvicorn {{cookiecutter.package_name}}_api.main:app --reload --port 8000
+
+# Production with multiple workers
+uv run uvicorn {{cookiecutter.package_name}}_api.main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --loop uvloop \
+    --http httptools
+
+# With SSL
+uv run uvicorn {{cookiecutter.package_name}}_api.main:app \
+    --ssl-keyfile key.pem \
+    --ssl-certfile cert.pem
+```
+
+**Programmatic usage:**
+
+```python
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "{{cookiecutter.package_name}}_api.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )
+```
+{%- if cookiecutter.api_auth %}
+
+---
+
+## python-jose
+
+JSON Web Token (JWT) implementation.
+
+**Documentation:** https://python-jose.readthedocs.io/
+
+**Usage:**
+
+```python
+from datetime import datetime, timedelta, UTC
+from jose import jwt, JWTError
+
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+
+# Create a token
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+# Verify and decode a token
+def verify_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise ValueError("Invalid token")
+
+# Usage
+token = create_access_token({"sub": "user@example.com"})
+payload = verify_token(token)
+```
+
+---
+
+## passlib
+
+Password hashing library.
+
+**Documentation:** https://passlib.readthedocs.io/
+
+**Usage:**
+
+```python
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Hash a password
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+# Verify a password
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+# Usage
+hashed = hash_password("mysecretpassword")
+is_valid = verify_password("mysecretpassword", hashed)
+```
+{%- endif %}
+
+---
+
+## Recommended Additional Packages
+
+Consider adding these packages to enhance your FastAPI application:
+
+### slowapi
+
+Rate limiting for FastAPI.
+
+**Installation:** `uv add slowapi`
+
+**Documentation:** https://github.com/laurentS/slowapi
+
+**Usage:**
+```python
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
+@app.get("/limited")
+@limiter.limit("5/minute")
+async def limited_endpoint(request: Request):
+    return {"message": "This endpoint is rate limited"}
+```
+
+### prometheus-fastapi-instrumentator
+
+Prometheus metrics for FastAPI.
+
+**Installation:** `uv add prometheus-fastapi-instrumentator`
+
+**Documentation:** https://github.com/trallnag/prometheus-fastapi-instrumentator
+
+**Usage:**
+```python
+from prometheus_fastapi_instrumentator import Instrumentator
+
+Instrumentator().instrument(app).expose(app)
+```
+
+### SQLAlchemy
+
+SQL toolkit and ORM.
+
+**Installation:** `uv add sqlalchemy[asyncio] asyncpg`
+
+**Documentation:** https://www.sqlalchemy.org/
+
+### Alembic
+
+Database migrations for SQLAlchemy.
+
+**Installation:** `uv add alembic`
+
+**Documentation:** https://alembic.sqlalchemy.org/
+
+### fastapi-cache2
+
+Caching for FastAPI.
+
+**Installation:** `uv add fastapi-cache2[redis]`
+
+**Documentation:** https://github.com/long2ice/fastapi-cache
+
+### fastapi-pagination
+
+Pagination for FastAPI.
+
+**Installation:** `uv add fastapi-pagination`
+
+**Documentation:** https://github.com/uriyyo/fastapi-pagination

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/src/{{cookiecutter.package_name}}" isTestSource="false" />{% if cookiecutter.cli%}
+      <sourceFolder url="file://$MODULE_DIR$/src/{{cookiecutter.package_name}}_cli" isTestSource="false" />{% endif %}{% if cookiecutter.web%}
+      <sourceFolder url="file://$MODULE_DIR$/src/{{cookiecutter.package_name}}_web" isTestSource="false" />{% endif %}
+      <sourceFolder url="file://$MODULE_DIR$/tests/test_{{cookiecutter.package_name}}" isTestSource="true" />{% if cookiecutter.cli%}
+      <sourceFolder url="file://$MODULE_DIR$/tests/test_{{cookiecutter.package_name}}_cli" isTestSource="true" />{% endif %}{% if cookiecutter.web%}
+      <sourceFolder url="file://$MODULE_DIR$/tests/test_{{cookiecutter.package_name}}_web" isTestSource="true" />{% endif %}
+      <excludeFolder url="file://$MODULE_DIR$/.hypothesis" />
+      <excludeFolder url="file://$MODULE_DIR$/.pytest_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
+      <excludeFolder url="file://$MODULE_DIR$/.ruff_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.ipython" />
+    </content>
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="py.test" />
+  </component>
+</module>

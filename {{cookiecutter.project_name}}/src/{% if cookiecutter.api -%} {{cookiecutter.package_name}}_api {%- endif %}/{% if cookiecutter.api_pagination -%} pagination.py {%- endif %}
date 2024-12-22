@@ -1,0 +1,47 @@
+"""Pagination utilities for FastAPI endpoints.
+
+This module provides customized pagination types and utilities using
+fastapi-pagination. It offers sensible defaults while maintaining
+flexibility for endpoint-specific customization.
+
+Usage:
+    from {{cookiecutter.package_name}}_api.pagination import CustomPage, Params, paginate
+
+    @router.get("/items", response_model=CustomPage[ItemSchema])
+    async def list_items() -> CustomPage[ItemSchema]:
+        items = await get_items_from_db()
+        return paginate(items)
+
+    # With custom page size
+    @router.get("/items", response_model=CustomPage[ItemSchema])
+    async def list_items(params: Params = Depends()) -> CustomPage[ItemSchema]:
+        items = await get_items_from_db()
+        return paginate(items)
+"""
+
+from collections.abc import Sequence
+
+from fastapi_pagination import Page, Params
+from fastapi_pagination import paginate as _paginate
+from fastapi_pagination.customization import CustomizedPage, UseParamsFields
+
+CustomPage = CustomizedPage[
+    Page,
+    UseParamsFields(size=20),
+]
+"""Customized page type with default page size of 20 items."""
+
+
+def paginate[T](items: Sequence[T]) -> Page[T]:
+    """Paginate a sequence of items.
+
+    Args:
+        items: Sequence of items to paginate.
+
+    Returns:
+        Paginated response.
+    """
+    return _paginate(items)  # type: ignore[no-any-return]
+
+
+__all__ = ["CustomPage", "Page", "Params", "paginate"]

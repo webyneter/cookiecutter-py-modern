@@ -1,0 +1,118 @@
+# CLI Dependencies Overview
+
+This document covers the CLI-related dependencies included in this project.
+
+## Table of Contents
+
+- [Typer](#typer)
+- [Recommended Additional Packages](#recommended-additional-packages)
+
+---
+
+## Typer
+
+Build CLI applications with type hints.
+
+**Documentation:** https://typer.tiangolo.com/
+
+**Usage:**
+
+```python
+from typing import Annotated, Optional
+import typer
+
+app = typer.Typer(help="My awesome CLI tool")
+
+@app.command()
+def hello(
+    name: Annotated[str, typer.Argument(help="Name to greet")],
+    formal: Annotated[bool, typer.Option("--formal", "-f", help="Use formal greeting")] = False,
+    count: Annotated[int, typer.Option(help="Number of greetings")] = 1,
+) -> None:
+    """Greet someone."""
+    greeting = "Good day" if formal else "Hello"
+    for _ in range(count):
+        typer.echo(f"{greeting}, {name}!")
+
+@app.command()
+def goodbye(name: str) -> None:
+    """Say goodbye."""
+    typer.echo(f"Goodbye, {name}!")
+
+# Callbacks for global options
+@app.callback()
+def main(
+    verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
+) -> None:
+    """My CLI application."""
+    if verbose:
+        typer.echo("Verbose mode enabled")
+
+if __name__ == "__main__":
+    app()
+```
+
+**Shell completion:**
+```shell
+# Install completion for your shell
+{{cookiecutter.project_name}} --install-completion
+
+# Generate completion script
+{{cookiecutter.project_name}} --show-completion
+```
+
+---
+
+## Recommended Additional Packages
+
+Consider adding these packages to enhance your CLI:
+
+### click-completion
+
+Extended shell completion for Click/Typer apps.
+
+**Installation:** `uv add click-completion`
+
+**Documentation:** https://github.com/click-contrib/click-completion
+
+### questionary
+
+Interactive user prompts for CLI applications.
+
+**Installation:** `uv add questionary`
+
+**Documentation:** https://questionary.readthedocs.io/
+
+**Usage:**
+```python
+import questionary
+
+# Simple text input
+name = questionary.text("What's your name?").ask()
+
+# Selection
+choice = questionary.select(
+    "What do you want to do?",
+    choices=["Create", "Update", "Delete"]
+).ask()
+
+# Confirmation
+if questionary.confirm("Are you sure?").ask():
+    perform_action()
+```
+
+### tqdm
+
+Progress bars for loops and iterables.
+
+**Installation:** `uv add tqdm`
+
+**Documentation:** https://tqdm.github.io/
+
+**Usage:**
+```python
+from tqdm import tqdm
+
+for item in tqdm(items, desc="Processing"):
+    process(item)
+```

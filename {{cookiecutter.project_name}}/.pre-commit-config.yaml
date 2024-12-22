@@ -1,0 +1,49 @@
+---
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files  # Prevents large files from being committed (default: 500kB)
+      - id: check-ast  # Validates Python syntax
+      - id: check-builtin-literals  # Ensures using literal syntax for empty Python builtins
+      - id: check-case-conflict  # Checks for files that would conflict in case-insensitive filesystems
+      - id: check-docstring-first  # Ensures docstrings are before code
+      - id: check-executables-have-shebangs  # Validates executable files have proper shebangs
+      - id: check-illegal-windows-names  # Checks for Windows-incompatible filenames
+      - id: check-json  # Validates JSON syntax
+      - id: check-merge-conflict  # Checks for merge conflict markers
+      - id: check-shebang-scripts-are-executable  # Ensures scripts with shebangs are executable
+      - id: check-symlinks  # Verifies symlinks are valid
+      - id: check-toml  # Validates TOML syntax
+      - id: check-vcs-permalinks  # Ensures VCS links are permalinks
+      - id: check-xml  # Validates XML syntax
+      - id: check-yaml  # Validates YAML syntax
+      - id: debug-statements  # Checks for debugger imports and breakpoint() calls
+      - id: destroyed-symlinks  # Detects symlinks converted to regular files
+      - id: detect-aws-credentials  # Checks for AWS credential files
+      - id: detect-private-key  # Scans for private keys
+      - id: end-of-file-fixer  # Ensures files end with a newline
+      - id: fix-byte-order-marker  # Removes UTF-8 BOM
+      - id: forbid-new-submodules  # Prevents adding new git submodules
+      - id: mixed-line-ending  # Normalizes line endings
+      - id: pretty-format-json  # Ensures JSON files are properly formatted
+      - id: trailing-whitespace  # Removes trailing whitespace
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+      - id: ruff-format
+
+  - repo: https://github.com/wemake-services/dotenv-linter
+    rev: 0.5.0
+    hooks:
+      - id: dotenv-linter
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli

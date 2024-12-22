@@ -1,0 +1,65 @@
+"""AWS Lambda handler for FastAPI application.
+
+This module provides the AWS Lambda entry point for the FastAPI application
+using Mangum as the ASGI adapter. It integrates AWS Lambda Powertools for
+structured logging{% if cookiecutter.api_lambda_powertools_tracing %}, distributed tracing{% endif %}{% if cookiecutter.api_lambda_powertools_metrics %}, and custom metrics{% endif %}.
+
+Usage:
+    Configure your Lambda function with handler: {{cookiecutter.package_name}}_api.lambda_handler.handler
+
+Environment Variables:
+    POWERTOOLS_SERVICE_NAME: Service name for logging/tracing (default: {{cookiecutter.package_name}}_api)
+    POWERTOOLS_LOG_LEVEL: Log level (default: INFO)
+{%- if cookiecutter.api_lambda_powertools_metrics %}
+    POWERTOOLS_METRICS_NAMESPACE: CloudWatch metrics namespace
+{%- endif %}
+"""
+
+from typing import Any
+
+from aws_lambda_powertools import (
+    Logger,
+{%- if cookiecutter.api_lambda_powertools_metrics %}
+    Metrics,
+{%- endif %}
+{%- if cookiecutter.api_lambda_powertools_tracing %}
+    Tracer,
+{%- endif %}
+)
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from mangum import Mangum
+
+from {{cookiecutter.package_name}}_api.main import app
+
+logger = Logger()
+{%- if cookiecutter.api_lambda_powertools_tracing %}
+tracer = Tracer()
+{%- endif %}
+{%- if cookiecutter.api_lambda_powertools_metrics %}
+metrics = Metrics()
+{%- endif %}
+
+mangum_handler = Mangum(app, lifespan="auto")
+
+
+{% if cookiecutter.api_lambda_powertools_tracing -%}
+@tracer.capture_lambda_handler
+{% endif -%}
+{% if cookiecutter.api_lambda_powertools_metrics -%}
+@metrics.log_metrics(capture_cold_start_metric=True)
+{% endif -%}
+@logger.inject_lambda_context(log_event=True)
+def handler(event: dict[str, Any], context: LambdaContext) -> dict[str, Any]:
+    """AWS Lambda entry point for the FastAPI application.
+
+    This handler wraps the FastAPI application using Mangum to handle
+    API Gateway, ALB, or Lambda Function URL events.
+
+    Args:
+        event: The Lambda event dictionary from API Gateway/ALB/Function URL.
+        context: The Lambda execution context.
+
+    Returns:
+        HTTP response dictionary compatible with API Gateway/ALB/Function URL.
+    """
+    return mangum_handler(event, context)  # type: ignore[arg-type]

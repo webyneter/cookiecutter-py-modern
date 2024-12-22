@@ -1,0 +1,67 @@
+{
+  "project_name": "example",
+  "package_name": "{{ cookiecutter.project_name.replace('-', '_') }}",
+  "friendly_name": "{{ cookiecutter.project_name.replace('-', ' ').title() }}",
+  "description": "{{ cookiecutter.friendly_name }}",
+  "author": "Nikita Shupeyko",
+  "email": "email@example.com",
+  "github_user": "webyneter",
+  "version": "0.1.0",
+  "copyright_year": "{% now 'utc', '%Y' %}",
+  "license": [
+    "MIT",
+    "Apache-2.0",
+    "GPL-3.0"
+  ],
+  "classifiers_intended_audience": [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Legal Industry",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Religion",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
+    "Intended Audience :: Other Audience"
+  ],
+  "classifiers_development_status": [
+    "Development Status :: 1 - Planning",
+    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 6 - Mature",
+    "Development Status :: 7 - Inactive"
+  ],
+  "classifiers_environment": [
+    "Environment :: Console",
+    "Environment :: No Input/Output (Daemon)",
+    "Environment :: Plugins",
+    "Environment :: Web Environment",
+    "Environment :: WebAssembly",
+    "Environment :: Other Environment"
+  ],
+  "classifiers_typing": [
+    "Typing :: Typed",
+    "Typing :: Stubs Only"
+  ],
+  "format_line_length": 120,
+  "coverage_fail_under": 80,
+  "pycharm": false,
+  "docker": true,
+  "async": true,
+  "cli": true,
+  "web": false,
+  "api": false,
+  "api_auth": false,
+  "api_lambda": false,
+  "api_lambda_powertools_tracing": false,
+  "api_lambda_powertools_metrics": false,
+  "api_pagination": false,
+  "api_versioning": false,
+  "include_uv_lock": true
+}
