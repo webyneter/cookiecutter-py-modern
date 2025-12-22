@@ -120,7 +120,7 @@ uv run mypy src/
 
 For detailed documentation, see the [docs](docs/index.md) directory, which includes:
 
-- [Core Dependencies](docs/core-dependencies-overview.md) - Essential libraries (structlog, Sentry, Pydantic, HTTPX)
+- [Core Dependencies](docs/core-dependencies-overview.md) - Essential libraries (structlog, {% if cookiecutter.sentry %}Sentry, {% endif %}Pydantic, HTTPX)
 {%- if cookiecutter.cli %}
 - [CLI Dependencies](docs/cli-dependencies-overview.md) - Command-line interface tools (Typer)
 {%- endif %}

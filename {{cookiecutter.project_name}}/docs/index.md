@@ -4,7 +4,7 @@ Welcome to the {{ cookiecutter.friendly_name }} documentation.
 
 ## Dependency Guides
 
-- [Core Dependencies](core-dependencies-overview.md) - Essential libraries (structlog, Sentry, Pydantic, HTTPX, orjson, Rich)
+- [Core Dependencies](core-dependencies-overview.md) - Essential libraries (structlog, {% if cookiecutter.sentry %}Sentry, {% endif %}Pydantic, HTTPX, orjson, Rich)
 {%- if cookiecutter.cli %}
 - [CLI Dependencies](cli-dependencies-overview.md) - Command-line interface tools (Typer)
 {%- endif %}

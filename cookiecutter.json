@@ -53,6 +53,7 @@
   "coverage_fail_under": 80,
   "pycharm": false,
   "docker": true,
+  "sentry": true,
   "async": true,
   "cli": true,
   "web": false,

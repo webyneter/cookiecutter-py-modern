@@ -74,7 +74,9 @@ dependencies = [
     "pydantic",
     "rich",
     "structlog",
+    {%- if cookiecutter.sentry %}
     "sentry-sdk",
+    {%- endif %}
 ]
 [project.urls]
 "Homepage" = "https://github.com/{{cookiecutter.github_user}}/{{cookiecutter.project_name}}"
@@ -256,7 +258,9 @@ asyncio_mode = "auto"
 {%- endif %}
 env = [
     "ENVIRONMENT=test",
+    {%- if cookiecutter.sentry %}
     "SENTRY_DSN=",
+    {%- endif %}
     {%- if cookiecutter.web %}
     "DJANGO_SETTINGS_MODULE={{cookiecutter.package_name}}_web.settings",
     "SECRET_KEY=test-secret-key-not-for-production",

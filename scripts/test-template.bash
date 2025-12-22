@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(dirname "${SCRIPT_DIR}")"
 DEFAULT_OUTPUT_DIR="${TEMPLATE_DIR}/.test-output"
 
+SENTRY="true"
 ASYNC="true"
 CLI="true"
 WEB="true"
@@ -36,6 +37,7 @@ Usage: $(basename "$0") [OPTIONS]
 
 Options:
     -h, --help                   Show this help message
+    -s, --sentry BOOL            Enable Sentry integration (default: ${SENTRY})
     -a, --async BOOL             Enable async support (default: ${ASYNC})
     -c, --cli BOOL               Enable CLI support (default: ${CLI})
     -w, --web BOOL               Enable web/Django support (default: ${WEB})
@@ -91,21 +93,22 @@ parse_bool() {
 generate_project() {
     local output_dir="${1}"
     local project_name="${2}"
-    local async_val="${3}"
-    local cli_val="${4}"
-    local web_val="${5}"
-    local api_val="${6}"
-    local api_auth_val="${7}"
-    local api_lambda_val="${8}"
-    local api_lambda_tracing_val="${9}"
-    local api_lambda_metrics_val="${10}"
-    local api_pagination_val="${11}"
-    local api_versioning_val="${12}"
-    local docker_val="${13}"
-    local pycharm_val="${14}"
+    local sentry_val="${3}"
+    local async_val="${4}"
+    local cli_val="${5}"
+    local web_val="${6}"
+    local api_val="${7}"
+    local api_auth_val="${8}"
+    local api_lambda_val="${9}"
+    local api_lambda_tracing_val="${10}"
+    local api_lambda_metrics_val="${11}"
+    local api_pagination_val="${12}"
+    local api_versioning_val="${13}"
+    local docker_val="${14}"
+    local pycharm_val="${15}"
 
     echo "Generating project '${project_name}' with options:"
-    echo "  async=${async_val}, cli=${cli_val}, web=${web_val}"
+    echo "  sentry=${sentry_val}, async=${async_val}, cli=${cli_val}, web=${web_val}"
     echo "  api=${api_val}, api_auth=${api_auth_val}, api_lambda=${api_lambda_val}"
     echo "  api_lambda_tracing=${api_lambda_tracing_val}, api_lambda_metrics=${api_lambda_metrics_val}"
     echo "  api_pagination=${api_pagination_val}, api_versioning=${api_versioning_val}"
@@ -128,6 +131,7 @@ default_context:
     format_line_length: 120
     pycharm: ${pycharm_val}
     docker: ${docker_val}
+    sentry: ${sentry_val}
     async: ${async_val}
     cli: ${cli_val}
     web: ${web_val}
@@ -209,34 +213,35 @@ run_lint() {
 
 test_all_variants() {
     local output_dir="${1}"
-    # Format: async:cli:web:api:api_auth:api_lambda:api_lambda_tracing:api_lambda_metrics:api_pagination:api_versioning:name
+    # Format: sentry:async:cli:web:api:api_auth:api_lambda:api_lambda_tracing:api_lambda_metrics:api_pagination:api_versioning:name
     local variants=(
-        "false:false:false:false:false:false:false:false:false:false:minimal"
-        "true:false:false:false:false:false:false:false:false:false:async-only"
-        "false:true:false:false:false:false:false:false:false:false:cli-only"
-        "false:false:true:false:false:false:false:false:false:false:web-only"
-        "false:false:false:true:false:false:false:false:false:false:api-only"
-        "false:false:false:true:true:false:false:false:false:false:api-auth"
-        "false:false:false:true:false:true:false:false:false:false:api-lambda"
-        "false:false:false:true:false:true:true:false:false:false:api-lambda-traced"
-        "false:false:false:true:false:true:true:true:false:false:api-lambda-full"
-        "false:false:false:true:false:false:false:false:true:false:api-pagination"
-        "false:false:false:true:false:false:false:false:false:true:api-versioning"
-        "true:true:false:false:false:false:false:false:false:false:async-cli"
-        "true:false:true:false:false:false:false:false:false:false:async-web"
-        "true:false:false:true:false:false:false:false:false:false:async-api"
-        "true:false:false:true:true:false:false:false:false:false:async-api-auth"
-        "true:false:false:true:true:true:true:true:true:true:async-api-full"
-        "true:true:true:false:false:false:false:false:false:false:full-no-api"
-        "true:true:false:true:true:false:false:false:false:false:full-no-web"
-        "true:true:true:true:true:true:true:true:true:true:full"
+        "true:false:false:false:false:false:false:false:false:false:false:minimal"
+        "false:false:false:false:false:false:false:false:false:false:false:no-sentry"
+        "true:true:false:false:false:false:false:false:false:false:false:async-only"
+        "true:false:true:false:false:false:false:false:false:false:false:cli-only"
+        "true:false:false:true:false:false:false:false:false:false:false:web-only"
+        "true:false:false:false:true:false:false:false:false:false:false:api-only"
+        "true:false:false:false:true:true:false:false:false:false:false:api-auth"
+        "true:false:false:false:true:false:true:false:false:false:false:api-lambda"
+        "true:false:false:false:true:false:true:true:false:false:false:api-lambda-traced"
+        "true:false:false:false:true:false:true:true:true:false:false:api-lambda-full"
+        "true:false:false:false:true:false:false:false:false:true:false:api-pagination"
+        "true:false:false:false:true:false:false:false:false:false:true:api-versioning"
+        "true:true:true:false:false:false:false:false:false:false:false:async-cli"
+        "true:true:false:true:false:false:false:false:false:false:false:async-web"
+        "true:true:false:false:true:false:false:false:false:false:false:async-api"
+        "true:true:false:false:true:true:false:false:false:false:false:async-api-auth"
+        "true:true:false:false:true:true:true:true:true:true:true:async-api-full"
+        "true:true:true:true:false:false:false:false:false:false:false:full-no-api"
+        "true:true:true:false:true:true:false:false:false:false:false:full-no-web"
+        "true:true:true:true:true:true:true:true:true:true:true:full"
     )
 
     local failed=()
     local passed=()
 
     for variant in "${variants[@]}"; do
-        IFS=':' read -r async_val cli_val web_val api_val api_auth_val api_lambda_val api_lambda_tracing_val api_lambda_metrics_val api_pagination_val api_versioning_val name <<< "${variant}"
+        IFS=':' read -r sentry_val async_val cli_val web_val api_val api_auth_val api_lambda_val api_lambda_tracing_val api_lambda_metrics_val api_pagination_val api_versioning_val name <<< "${variant}"
         local project_name="test-${name}"
         local project_dir="${output_dir}/${project_name}"
 
@@ -249,7 +254,7 @@ test_all_variants() {
             rm -rf "${project_dir}"
         fi
 
-        if generate_project "${output_dir}" "${project_name}" "${async_val}" "${cli_val}" "${web_val}" "${api_val}" "${api_auth_val}" "${api_lambda_val}" "${api_lambda_tracing_val}" "${api_lambda_metrics_val}" "${api_pagination_val}" "${api_versioning_val}" "true" "false"; then
+        if generate_project "${output_dir}" "${project_name}" "${sentry_val}" "${async_val}" "${cli_val}" "${web_val}" "${api_val}" "${api_auth_val}" "${api_lambda_val}" "${api_lambda_tracing_val}" "${api_lambda_metrics_val}" "${api_pagination_val}" "${api_versioning_val}" "true" "false"; then
             if install_dependencies "${project_dir}"; then
                 if run_lint "${project_dir}"; then
                     if run_tests "${project_dir}"; then
@@ -300,6 +305,10 @@ main() {
             -h|--help)
                 help
                 return 0
+                ;;
+            -s|--sentry)
+                SENTRY=$(parse_bool "${2}")
+                shift 2
                 ;;
             -a|--async)
                 ASYNC=$(parse_bool "${2}")
@@ -416,7 +425,7 @@ main() {
         rm -rf "${project_dir}"
     fi
 
-    generate_project "${OUTPUT_DIR}" "${PROJECT_NAME}" "${ASYNC}" "${CLI}" "${WEB}" "${API}" "${API_AUTH}" "${API_LAMBDA}" "${API_LAMBDA_TRACING}" "${API_LAMBDA_METRICS}" "${API_PAGINATION}" "${API_VERSIONING}" "${DOCKER}" "${PYCHARM}"
+    generate_project "${OUTPUT_DIR}" "${PROJECT_NAME}" "${SENTRY}" "${ASYNC}" "${CLI}" "${WEB}" "${API}" "${API_AUTH}" "${API_LAMBDA}" "${API_LAMBDA_TRACING}" "${API_LAMBDA_METRICS}" "${API_PAGINATION}" "${API_VERSIONING}" "${DOCKER}" "${PYCHARM}"
 
     if [[ "${INSTALL_DEPS}" == "true" ]]; then
         install_dependencies "${project_dir}"

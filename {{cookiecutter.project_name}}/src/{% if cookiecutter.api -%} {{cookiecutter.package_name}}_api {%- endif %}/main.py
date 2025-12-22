@@ -11,7 +11,9 @@ from fastapi_pagination import add_pagination
 {%- endif %}
 
 from {{cookiecutter.package_name}}.logging import get_logger
+{%- if cookiecutter.sentry %}
 from {{cookiecutter.package_name}}.sentry import init_sentry
+{%- endif %}
 from {{cookiecutter.package_name}}_api.config import settings
 from {{cookiecutter.package_name}}_api.exceptions import configure_exception_handlers
 from {{cookiecutter.package_name}}_api.middleware.logging import LoggingMiddleware
@@ -41,7 +43,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         None during application lifetime.
     """
     logger.info("Starting {{cookiecutter.friendly_name}} API...")
+    {%- if cookiecutter.sentry %}
     init_sentry()
+    {%- endif %}
     yield
     logger.info("Shutting down {{cookiecutter.friendly_name}} API...")
 

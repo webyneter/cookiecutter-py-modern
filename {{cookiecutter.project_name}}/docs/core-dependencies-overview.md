@@ -5,7 +5,9 @@ This document covers the core dependencies included in all generated projects.
 ## Table of Contents
 
 - [structlog](#structlog)
+{%- if cookiecutter.sentry %}
 - [Sentry SDK](#sentry-sdk)
+{%- endif %}
 - [django-environ](#django-environ)
 - [Pydantic](#pydantic)
 - [HTTPX](#httpx)
@@ -48,6 +50,7 @@ except Exception:
 ```
 
 ---
+{%- if cookiecutter.sentry %}
 
 ## Sentry SDK
 
@@ -91,6 +94,7 @@ with sentry_sdk.start_transaction(op="task", name="process_order"):
 ```
 
 ---
+{%- endif %}
 
 ## django-environ
 
