@@ -68,3 +68,7 @@ This tests:
 ```
 
 Generated projects are placed in `.test-output/` by default (gitignored).
+
+## Disclaimer
+
+This project is maintained on a best-effort basis. No guarantees of any sort are made regarding functionality, stability, or continued support. The community is welcome to contribute via issues and pull requests.
