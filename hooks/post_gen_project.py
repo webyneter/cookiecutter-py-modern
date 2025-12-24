@@ -164,6 +164,27 @@ def cleanup_leaked_web_files() -> None:
     remove_path(TESTS_DIR / "test_django.py")
 
 
+def regenerate_api_init(package_name: str) -> None:
+    """Regenerate API package __init__.py after auth __init__ leaked and overwrote it."""
+    api_package = SRC_DIR / f"{package_name}_api"
+    init_content = f'''"""API package for {package_name}."""
+
+from {package_name}_api.main import app
+
+__all__ = ["app"]
+'''
+    (api_package / "__init__.py").write_text(init_content)
+
+
+def regenerate_routers_init(package_name: str) -> None:
+    """Regenerate routers __init__.py after v1 __init__ leaked and overwrote it."""
+    api_package = SRC_DIR / f"{package_name}_api"
+    routers_dir = api_package / "routers"
+    init_content = '''"""API routers package."""
+'''
+    (routers_dir / "__init__.py").write_text(init_content)
+
+
 def cleanup_leaked_auth_files(package_name: str) -> None:
     """Remove auth files that leaked to _api package when api_auth=false."""
     api_package = SRC_DIR / f"{package_name}_api"
@@ -171,7 +192,6 @@ def cleanup_leaked_auth_files(package_name: str) -> None:
         return
 
     auth_files = [
-        "__init__.py",  # From auth package
         "dependencies.py",
         "jwt.py",
         "schemas.py",
@@ -180,14 +200,40 @@ def cleanup_leaked_auth_files(package_name: str) -> None:
     # Remove leaked files in API package root
     for filename in auth_files:
         leaked_file = api_package / filename
-        # Don't remove __init__.py since API package needs it
-        if filename != "__init__.py":
-            # Check if the file exists at package root (leaked) vs in auth/ subdir
-            if leaked_file.exists() and not (api_package / "auth" / filename).exists():
-                remove_path(leaked_file)
+        if leaked_file.exists():
+            remove_path(leaked_file)
+
+    # The auth/__init__.py leaks to api package root, overwriting it
+    # Regenerate the clean API __init__.py
+    regenerate_api_init(package_name)
 
     # Remove auth.py router if it leaked to routers/
     remove_path(api_package / "routers" / "auth.py")
+
+    # Remove leaked auth test files
+    api_test_dir = TESTS_DIR / f"test_{package_name}_api"
+    if api_test_dir.exists():
+        remove_path(api_test_dir / "test_auth.py")
+
+
+def cleanup_leaked_versioning_files(package_name: str) -> None:
+    """Remove v1 files that leaked to routers/ when api_versioning=false."""
+    api_package = SRC_DIR / f"{package_name}_api"
+    if not api_package.exists():
+        return
+
+    routers_dir = api_package / "routers"
+    if not routers_dir.exists():
+        return
+
+    # Remove leaked v1 files from routers/
+    v1_files = ["example.py"]
+    for filename in v1_files:
+        remove_path(routers_dir / filename)
+
+    # The v1/__init__.py leaks to routers/, overwriting it
+    # Regenerate the clean routers __init__.py
+    regenerate_routers_init(package_name)
 
 
 def cleanup_leaked_sentry_files() -> None:
@@ -215,6 +261,10 @@ def main() -> None:
     # Clean up auth files if api=true but api_auth=false
     if API and not API_AUTH:
         cleanup_leaked_auth_files(PACKAGE_NAME)
+
+    # Clean up versioning files if api=true but api_versioning=false
+    if API and not API_VERSIONING:
+        cleanup_leaked_versioning_files(PACKAGE_NAME)
 
     # Clean up Docker files
     docker_dir = PROJECT_DIR / "docker"
