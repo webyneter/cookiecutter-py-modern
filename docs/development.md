@@ -50,15 +50,21 @@ The `scripts/` directory contains modular scripts for testing:
 ./scripts/test-all-variants.bash --clean
 ```
 
-Variants tested include:
+Variants tested (11 total):
 
-- `minimal` - sentry only, no optional features
-- `no-sentry` - no features at all
-- `async-only`, `cli-only`, `web-only`, `api-only` - single features
-- `api-auth`, `api-lambda`, `api-lambda-traced`, `api-lambda-full` - API variants
-- `api-pagination`, `api-versioning` - API extensions
-- `async-cli`, `async-web`, `async-api`, `async-api-auth`, `async-api-full` - async combinations
-- `full-no-api`, `full-no-web`, `full` - comprehensive variants
+| Variant          | Features         | Use Case                 |
+|------------------|------------------|--------------------------|
+| `minimal`        | sentry           | Base case validation     |
+| `cli-only`       | cli              | Standalone CLI tools     |
+| `web-only`       | web              | Django web apps          |
+| `api-only`       | api              | Simple FastAPI services  |
+| `api-auth`       | api, auth        | APIs with authentication |
+| `api-lambda`     | api, lambda      | Serverless deployments   |
+| `async-web`      | async, web       | Async Django apps        |
+| `async-api-auth` | async, api, auth | Async FastAPI with auth  |
+| `full-no-api`    | all except api   | Django + CLI apps        |
+| `full-no-web`    | all except web   | FastAPI + CLI apps       |
+| `full`           | everything       | Full integration test    |
 
 ### Script Options (test-template.bash)
 
