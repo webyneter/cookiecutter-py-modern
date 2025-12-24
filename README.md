@@ -9,20 +9,26 @@
 [![License](https://img.shields.io/badge/license-MIT%20%7C%20Apache--2.0%20%7C%20GPL--3.0-blue.svg)](LICENSE)
 [![Cookiecutter](https://img.shields.io/badge/built%20with-Cookiecutter-ff69b4.svg)](https://github.com/cookiecutter/cookiecutter)
 
-A modern, batteries-included Cookiecutter template for Python and API projects. Generate production-ready scaffolding
-with optional support for CLI applications, web backends, REST APIs, serverless deployments, and more.
+A modern, batteries-included Cookiecutter template for Python and API projects.
+
+Generate production-ready scaffolding with optional support for CLI applications, web backends, REST APIs, serverless
+deployments, and more.
 
 ## Features
 
 - **Python 3.12+** — Modern Python with full type hints and the latest language features
-- **[FastAPI](https://fastapi.tiangolo.com/)** — High-performance async API framework with automatic OpenAPI docs, middleware, health checks, JWT authentication, and URL-prefix versioning
-- **[Django](https://www.djangoproject.com/)** — Battle-tested web framework with security hardening (CSP, CORS, Axes) out of the box
+- **[FastAPI](https://fastapi.tiangolo.com/)** — High-performance async API framework with automatic OpenAPI docs,
+  middleware, health checks, JWT authentication, and URL-prefix versioning
+- **[Django](https://www.djangoproject.com/)** — Battle-tested web framework with security hardening (CSP, CORS, Axes)
+  out of the box
 - **[Typer](https://typer.tiangolo.com/)** — Build elegant CLIs with automatic help generation and shell completion
-- **[Mangum](https://mangum.io/) + [AWS Lambda Powertools](https://docs.powertools.aws.dev/lambda/python/latest/)** — Deploy your FastAPI to AWS Lambda with structured logging, X-Ray tracing, and CloudWatch metrics
+- **[Mangum](https://mangum.io/) + [AWS Lambda Powertools](https://docs.powertools.aws.dev/lambda/python/latest/)** —
+  Deploy your FastAPI to AWS Lambda with structured logging, X-Ray tracing, and CloudWatch metrics
 - **Async-First** — Full async support with uvloop and pytest-asyncio for blazing-fast concurrent workloads
 - **Docker & Docker Compose** — Production-ready multi-stage builds for containerized deployments
 - **[Sentry](https://sentry.io/)** — Error tracking and performance monitoring from day one
-- **[uv](https://docs.astral.sh/uv/) + [Hatch](https://hatch.pypa.io/)** — Lightning-fast dependency management and modern build tooling
+- **[uv](https://docs.astral.sh/uv/) + [Hatch](https://hatch.pypa.io/)** — Lightning-fast dependency management and
+  modern build tooling
 - **[Ruff](https://docs.astral.sh/ruff/)** — Linting and formatting at 10-100x the speed of traditional tools
 - **[mypy](https://mypy-lang.org/)** — Strict type checking to catch bugs before they reach production
 - **[pytest](https://docs.pytest.org/)** — Comprehensive testing with coverage, hypothesis, and parallel execution
