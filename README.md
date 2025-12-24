@@ -128,8 +128,6 @@ stability, or continued support. The community is welcome to contribute via issu
 
 ## License
 
-This template is available under multiple license options. When generating a project, you can choose between:
+This template is released under the [MIT License](LICENSE).
 
-- [MIT License](https://opensource.org/licenses/MIT)
-- [Apache License 2.0](https://opensource.org/licenses/Apache-2.0)
-- [GNU General Public License v3.0](https://opensource.org/licenses/GPL-3.0)
+Generated projects can choose their own license or proceed without one.
