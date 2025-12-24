@@ -20,6 +20,7 @@ CLI = to_bool("{{ cookiecutter.cli }}")
 WEB = to_bool("{{ cookiecutter.web }}")
 API = to_bool("{{ cookiecutter.api }}")
 API_AUTH = to_bool("{{ cookiecutter.api_auth }}")
+API_LAMBDA = to_bool("{{ cookiecutter.api_lambda }}")
 API_VERSIONING = to_bool("{{ cookiecutter.api_versioning }}")
 
 
@@ -243,9 +244,43 @@ def cleanup_leaked_sentry_files() -> None:
     remove_path(SRC_DIR / "sentry.py")
 
 
+def cleanup_disabled_placeholder_dirs() -> None:
+    """Remove placeholder directories created when features are disabled.
+
+    Cookiecutter doesn't support truly optional directories, so we use
+    placeholder names like '_api_disabled' that are always created,
+    then cleaned up here based on the actual feature flags.
+    """
+    if not API:
+        remove_path(SRC_DIR / "_api_disabled")
+        remove_path(TESTS_DIR / "_test_api_disabled")
+
+    if not CLI:
+        remove_path(SRC_DIR / "_cli_disabled")
+        remove_path(TESTS_DIR / "_test_cli_disabled")
+
+    if not WEB:
+        remove_path(SRC_DIR / "_web_disabled")
+        remove_path(TESTS_DIR / "_test_web_disabled")
+
+    if not API_LAMBDA:
+        remove_path(PROJECT_DIR / "envs" / "_lambda_disabled")
+
+    # Nested placeholders inside API package (only relevant when API is enabled)
+    if API:
+        api_package = SRC_DIR / f"{PACKAGE_NAME}_api"
+        if not API_AUTH:
+            remove_path(api_package / "_auth_disabled")
+        if not API_VERSIONING:
+            remove_path(api_package / "routers" / "_v1_disabled")
+
+
 def main() -> None:
     """Clean up files and directories based on cookiecutter options."""
-    # Clean up leaked files from conditional directories
+    # Clean up placeholder directories for disabled features
+    cleanup_disabled_placeholder_dirs()
+
+    # Clean up leaked files from conditional directories (legacy fallback)
     if not API:
         cleanup_leaked_api_files()
 
