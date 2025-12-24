@@ -1,0 +1,91 @@
+name: Dependency Sync
+
+on:
+  push:
+    branches: [integrate-dependabot]
+  workflow_dispatch:
+  # TODO: Uncomment after testing on integrate-dependabot branch
+  # schedule:
+  #   - cron: "0 6 * * 1"
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-dependencies:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install cookiecutter
+        run: pipx install cookiecutter
+
+      - name: Generate full variant
+        run: |
+          variant=$(jq -r '.variants[] | select(.name == "full")' variants.json)
+
+          ./scripts/generate.bash --clean \
+            --name "$(echo "${variant}" | jq -r '.name')" \
+            --sentry "$(echo "${variant}" | jq -r '.sentry')" \
+            --async "$(echo "${variant}" | jq -r '.async')" \
+            --cli "$(echo "${variant}" | jq -r '.cli')" \
+            --web "$(echo "${variant}" | jq -r '.web')" \
+            --api "$(echo "${variant}" | jq -r '.api')" \
+            --api-auth "$(echo "${variant}" | jq -r '.api_auth')" \
+            --api-lambda "$(echo "${variant}" | jq -r '.api_lambda')" \
+            --api-lambda-tracing "$(echo "${variant}" | jq -r '.api_lambda_tracing')" \
+            --api-lambda-metrics "$(echo "${variant}" | jq -r '.api_lambda_metrics')" \
+            --api-pagination "$(echo "${variant}" | jq -r '.api_pagination')" \
+            --api-versioning "$(echo "${variant}" | jq -r '.api_versioning')" \
+            --docker true
+
+      - name: Install dependencies
+        run: ./scripts/install.bash .test-output/full
+
+      - name: Check for dependency updates
+        id: check
+        working-directory: .test-output/full
+        run: |
+          cp uv.lock uv.lock.orig
+          uv lock --upgrade
+          if ! diff -q uv.lock uv.lock.orig > /dev/null 2>&1; then
+            echo "updates=true" >> "${GITHUB_OUTPUT}"
+            echo "Dependency updates available:"
+            diff uv.lock.orig uv.lock || true
+          else
+            echo "updates=false" >> "${GITHUB_OUTPUT}"
+            echo "No dependency updates available"
+          fi
+
+      - name: Update template lockfile
+        if: steps.check.outputs.updates == 'true'
+        run: |
+          cp .test-output/full/uv.lock \
+            "{{cookiecutter.project_name}}/{% if cookiecutter.include_uv_lock -%} uv.lock {%- endif %}"
+
+      - name: Create pull request
+        if: steps.check.outputs.updates == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore(deps): update template dependencies"
+          title: "chore(deps): update template dependencies"
+          body: |
+            Automated dependency update from full variant generation.
+
+            Run `./scripts/test-template.bash` to verify all variants still work.
+          branch: chore/update-template-deps
+          delete-branch: true
