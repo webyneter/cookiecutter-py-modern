@@ -36,6 +36,7 @@ deployments, and more.
 - **[Structlog](https://www.structlog.org/)** — Structured logging that makes debugging a breeze
 - **[pre-commit](https://pre-commit.com/)** — Automated hooks to enforce code quality on every commit
 - **[Safety](https://safetycli.com/)** — Continuous vulnerability scanning for your dependencies
+- **CI-Tested** — [11 template variants](variants.json) validated on every push for linting, type safety, and tests so you can rest assured your generated project works out of the box (aside from unknown unknowns, of course 😉)
 
 ## Quick Start
 
