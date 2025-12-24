@@ -38,10 +38,8 @@ Options:
     --clean          Remove output directory before starting
 
 Variants tested:
-  - minimal, no-sentry, async-only, cli-only, web-only
-  - api-only, api-auth, api-lambda, api-lambda-traced, api-lambda-full
-  - api-pagination, api-versioning, async-cli, async-web, async-api
-  - async-api-auth, async-api-full, full-no-api, full-no-web, full
+  - minimal, cli-only, web-only, api-only, api-auth, api-lambda
+  - async-web, async-api-auth, full-no-api, full-no-web, full
 
 Examples:
     $(basename "$0")
@@ -55,25 +53,21 @@ test_all_variants() {
     local output_dir="${1}"
     # Format: sentry:async:cli:web:api:api_auth:api_lambda:api_lambda_tracing:api_lambda_metrics:api_pagination:api_versioning:name
     local variants=(
+        # Base cases
         "true:false:false:false:false:false:false:false:false:false:false:minimal"
-        "false:false:false:false:false:false:false:false:false:false:false:no-sentry"
-        "true:true:false:false:false:false:false:false:false:false:false:async-only"
+        # Single feature variants
         "true:false:true:false:false:false:false:false:false:false:false:cli-only"
         "true:false:false:true:false:false:false:false:false:false:false:web-only"
         "true:false:false:false:true:false:false:false:false:false:false:api-only"
+        # API feature combinations
         "true:false:false:false:true:true:false:false:false:false:false:api-auth"
         "true:false:false:false:true:false:true:false:false:false:false:api-lambda"
-        "true:false:false:false:true:false:true:true:false:false:false:api-lambda-traced"
-        "true:false:false:false:true:false:true:true:true:false:false:api-lambda-full"
-        "true:false:false:false:true:false:false:false:false:true:false:api-pagination"
-        "true:false:false:false:true:false:false:false:false:false:true:api-versioning"
-        "true:true:true:false:false:false:false:false:false:false:false:async-cli"
+        # Async combinations
         "true:true:false:true:false:false:false:false:false:false:false:async-web"
-        "true:true:false:false:true:false:false:false:false:false:false:async-api"
         "true:true:false:false:true:true:false:false:false:false:false:async-api-auth"
-        "true:true:false:false:true:true:true:true:true:true:true:async-api-full"
+        # Full stack variants
         "true:true:true:true:false:false:false:false:false:false:false:full-no-api"
-        "true:true:true:false:true:true:false:false:false:false:false:full-no-web"
+        "true:true:true:false:true:true:true:true:true:true:true:full-no-web"
         "true:true:true:true:true:true:true:true:true:true:true:full"
     )
 
