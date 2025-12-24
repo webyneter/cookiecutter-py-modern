@@ -1,5 +1,12 @@
 # Development
 
+## Guidelines
+
+- Follow existing code style and conventions
+- Add tests for new functionality
+- Update documentation as needed
+- Keep pull requests focused and atomic
+
 ## Prerequisites
 
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
