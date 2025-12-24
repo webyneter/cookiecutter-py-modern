@@ -5,6 +5,15 @@ set -o nounset
 set -o noclobber
 set -o pipefail
 
+cleanup() {
+    echo ""
+    echo "Interrupted. Cleaning up..."
+    kill -- -$$ 2>/dev/null || true
+    exit 130
+}
+
+trap cleanup SIGINT SIGTERM
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(dirname "${SCRIPT_DIR}")"
 DEFAULT_OUTPUT_DIR="${TEMPLATE_DIR}/.test-output"
