@@ -1,3 +1,11 @@
+# CI Workflow
+#
+# Purpose: Tests all template variants on push to main.
+# Generates each variant defined in variants.json and runs lint + tests
+# to ensure all feature combinations work correctly.
+#
+# Trigger: Push to main branch
+
 name: CI
 
 on:
@@ -16,7 +24,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       names: ${{ steps.set-matrix.outputs.names }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: set-matrix
         run: |
           echo "matrix=$(jq -c '.variants' variants.json)" >> "${GITHUB_OUTPUT}"
@@ -31,63 +39,21 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.load-variants.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup-environment
+
+      - uses: ./.github/actions/generate-variant
+        id: generate
         with:
-          python-version: "3.12"
-
-      - uses: astral-sh/setup-uv@v4
-
-      - name: Install cookiecutter
-        run: pipx install cookiecutter
-
-      - name: Restore uv cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: uv-${{ matrix.name }}-${{ hashFiles('variants.json') }}
-          restore-keys: |
-            uv-${{ matrix.name }}-
-
-      - name: Generate project
-        env:
-          VARIANT_NAME: ${{ matrix.name }}
-          SENTRY: ${{ matrix.sentry }}
-          ASYNC: ${{ matrix.async }}
-          CLI: ${{ matrix.cli }}
-          WEB: ${{ matrix.web }}
-          API: ${{ matrix.api }}
-          API_AUTH: ${{ matrix.api_auth }}
-          API_LAMBDA: ${{ matrix.api_lambda }}
-          API_LAMBDA_TRACING: ${{ matrix.api_lambda_tracing }}
-          API_LAMBDA_METRICS: ${{ matrix.api_lambda_metrics }}
-          API_PAGINATION: ${{ matrix.api_pagination }}
-          API_VERSIONING: ${{ matrix.api_versioning }}
-        run: |
-          ./scripts/generate.bash \
-            --name "test-${VARIANT_NAME}" \
-            --sentry "${SENTRY}" \
-            --async "${ASYNC}" \
-            --cli "${CLI}" \
-            --web "${WEB}" \
-            --api "${API}" \
-            --api-auth "${API_AUTH}" \
-            --api-lambda "${API_LAMBDA}" \
-            --api-lambda-tracing "${API_LAMBDA_TRACING}" \
-            --api-lambda-metrics "${API_LAMBDA_METRICS}" \
-            --api-pagination "${API_PAGINATION}" \
-            --api-versioning "${API_VERSIONING}" \
-            --docker "true"
-
-      - name: Install dependencies
-        run: ./scripts/install.bash ".test-output/test-${{ matrix.name }}"
+          variant-name: ${{ matrix.name }}
+          output-name: test-${{ matrix.name }}
 
       - name: Upload project artifact
         uses: actions/upload-artifact@v4
         with:
           name: project-${{ matrix.name }}
-          path: .test-output/test-${{ matrix.name }}
+          path: ${{ steps.generate.outputs.project-path }}
           retention-days: 1
 
   lint:
@@ -99,13 +65,9 @@ jobs:
       matrix:
         variant: ${{ fromJSON(needs.load-variants.outputs.names) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - uses: astral-sh/setup-uv@v4
+      - uses: ./.github/actions/setup-environment
 
       - name: Restore uv cache
         uses: actions/cache@v4
@@ -136,13 +98,9 @@ jobs:
       matrix:
         variant: ${{ fromJSON(needs.load-variants.outputs.names) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - uses: astral-sh/setup-uv@v4
+      - uses: ./.github/actions/setup-environment
 
       - name: Restore uv cache
         uses: actions/cache@v4
