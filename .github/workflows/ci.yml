@@ -149,3 +149,46 @@ jobs:
 
       - name: Run tests
         run: ./scripts/test.bash ".test-output/test-${{ matrix.variant }}"
+
+  summary:
+    needs: [load-variants, lint, test]
+    if: always()
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Generate summary
+        env:
+          VARIANTS: ${{ needs.load-variants.outputs.names }}
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          echo "## CI Summary" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+
+          if [[ "${LINT_RESULT}" == "success" && "${TEST_RESULT}" == "success" ]]; then
+            echo "### All checks passed" >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "### Some checks failed" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Job | Status |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "|-----|--------|" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Lint | ${LINT_RESULT} |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "| Test | ${TEST_RESULT} |" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "### Variants tested" >> "${GITHUB_STEP_SUMMARY}"
+          echo '```json' >> "${GITHUB_STEP_SUMMARY}"
+          echo "${VARIANTS}" | jq '.' >> "${GITHUB_STEP_SUMMARY}"
+          echo '```' >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Fail if any check failed
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          TEST_RESULT: ${{ needs.test.result }}
+        run: |
+          if [[ "${LINT_RESULT}" != "success" || "${TEST_RESULT}" != "success" ]]; then
+            echo "Some checks failed: lint=${LINT_RESULT}, test=${TEST_RESULT}"
+            exit 1
+          fi
