@@ -9,6 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$(dirname "${SCRIPT_DIR}")"
 DEFAULT_OUTPUT_DIR="${TEMPLATE_DIR}/.test-output"
 
+OUTPUT_DIR="${DEFAULT_OUTPUT_DIR}"
+PROJECT_NAME="test-project"
 SENTRY="true"
 ASYNC="true"
 CLI="true"
@@ -21,30 +23,18 @@ API_LAMBDA_METRICS="true"
 API_PAGINATION="true"
 API_VERSIONING="true"
 DOCKER="true"
-PYCHARM="true"
-OUTPUT_DIR="${DEFAULT_OUTPUT_DIR}"
-PROJECT_NAME="test-project"
-INSTALL_DEPS="true"
-RUN_TESTS="true"
-RUN_LINT="true"
-RUN_ALL_VARIANTS="true"
-CLEAN="true"
+PYCHARM="false"
 
 help() {
     cat <<EOF
-Generate a project from the cookiecutter template for testing purposes.
-
-This is an orchestration script that calls individual scripts:
-  - generate.bash: Generate project from template
-  - install.bash: Install dependencies
-  - lint.bash: Run linting and type checks
-  - test.bash: Run tests
-  - test-all-variants.bash: Test all variant combinations
+Generate a project from the cookiecutter template.
 
 Usage: $(basename "$0") [OPTIONS]
 
 Options:
     -h, --help                   Show this help message
+    -o, --output DIR             Output directory (default: ${DEFAULT_OUTPUT_DIR})
+    -n, --name NAME              Project name (default: ${PROJECT_NAME})
     -s, --sentry BOOL            Enable Sentry integration (default: ${SENTRY})
     -a, --async BOOL             Enable async support (default: ${ASYNC})
     -c, --cli BOOL               Enable CLI support (default: ${CLI})
@@ -58,26 +48,11 @@ Options:
     --api-versioning BOOL        Enable API versioning (default: ${API_VERSIONING})
     -d, --docker BOOL            Enable Docker support (default: ${DOCKER})
     -p, --pycharm BOOL           Enable PyCharm support (default: ${PYCHARM})
-    -o, --output DIR             Output directory (default: ${DEFAULT_OUTPUT_DIR})
-    -n, --name NAME              Project name (default: ${PROJECT_NAME})
-    -i, --install                Install dependencies after generation
-    -t, --test                   Run tests after generation (implies --install)
-    -l, --lint                   Run linting/type checks after generation (implies --install)
-    --all-variants BOOL          Generate and test all variant combinations (default: ${RUN_ALL_VARIANTS})
-    --clean                      Remove output directory before generation
+    --clean                      Remove project directory if it exists before generation
 
 Examples:
-    $(basename "$0")
-        Test all variant combinations (default)
-
-    $(basename "$0") --clean
-        Clean output and test all variant combinations
-
-    $(basename "$0") --all-variants false --web true --async true
-        Generate and test a single project with specific options
-
-    $(basename "$0") --all-variants false --clean --web true --test
-        Clean, generate web project, install deps, and run tests
+    $(basename "$0") --name my-project --api true --web false
+    $(basename "$0") --clean --name full-project --api true --api-auth true
 EOF
     return 0
 }
@@ -98,12 +73,88 @@ parse_bool() {
     esac
 }
 
+generate_project() {
+    local output_dir="${1}"
+    local project_name="${2}"
+    local sentry_val="${3}"
+    local async_val="${4}"
+    local cli_val="${5}"
+    local web_val="${6}"
+    local api_val="${7}"
+    local api_auth_val="${8}"
+    local api_lambda_val="${9}"
+    local api_lambda_tracing_val="${10}"
+    local api_lambda_metrics_val="${11}"
+    local api_pagination_val="${12}"
+    local api_versioning_val="${13}"
+    local docker_val="${14}"
+    local pycharm_val="${15}"
+
+    echo "Generating project '${project_name}' with options:"
+    echo "  sentry=${sentry_val}, async=${async_val}, cli=${cli_val}, web=${web_val}"
+    echo "  api=${api_val}, api_auth=${api_auth_val}, api_lambda=${api_lambda_val}"
+    echo "  api_lambda_tracing=${api_lambda_tracing_val}, api_lambda_metrics=${api_lambda_metrics_val}"
+    echo "  api_pagination=${api_pagination_val}, api_versioning=${api_versioning_val}"
+    echo "  docker=${docker_val}, pycharm=${pycharm_val}"
+    echo "  output: ${output_dir}/${project_name}"
+
+    local config_file
+    config_file=$(mktemp)
+    cat >| "${config_file}" <<EOF
+default_context:
+    project_name: "${project_name}"
+    author: "Test Author"
+    email: "test@example.com"
+    github_user: "testuser"
+    license: "MIT"
+    classifiers_intended_audience: "Intended Audience :: Developers"
+    classifiers_development_status: "Development Status :: 3 - Alpha"
+    classifiers_environment: "Environment :: Console"
+    classifiers_typing: "Typing :: Typed"
+    format_line_length: 120
+    pycharm: ${pycharm_val}
+    docker: ${docker_val}
+    sentry: ${sentry_val}
+    async: ${async_val}
+    cli: ${cli_val}
+    web: ${web_val}
+    api: ${api_val}
+    api_auth: ${api_auth_val}
+    api_lambda: ${api_lambda_val}
+    api_lambda_powertools_tracing: ${api_lambda_tracing_val}
+    api_lambda_powertools_metrics: ${api_lambda_metrics_val}
+    api_pagination: ${api_pagination_val}
+    api_versioning: ${api_versioning_val}
+    include_uv_lock: true
+EOF
+
+    cookiecutter "${TEMPLATE_DIR}" \
+        --no-input \
+        --config-file "${config_file}" \
+        --output-dir "${output_dir}" \
+        -f
+
+    rm -f "${config_file}"
+
+    echo "Project generated successfully at ${output_dir}/${project_name}"
+}
+
 main() {
+    local clean="false"
+
     while [[ $# -gt 0 ]]; do
         case "${1}" in
             -h|--help)
                 help
                 return 0
+                ;;
+            -o|--output)
+                OUTPUT_DIR="${2}"
+                shift 2
+                ;;
+            -n|--name)
+                PROJECT_NAME="${2}"
+                shift 2
                 ;;
             -s|--sentry)
                 SENTRY=$(parse_bool "${2}")
@@ -157,34 +208,8 @@ main() {
                 PYCHARM=$(parse_bool "${2}")
                 shift 2
                 ;;
-            -o|--output)
-                OUTPUT_DIR="${2}"
-                shift 2
-                ;;
-            -n|--name)
-                PROJECT_NAME="${2}"
-                shift 2
-                ;;
-            -i|--install)
-                INSTALL_DEPS="true"
-                shift
-                ;;
-            -t|--test)
-                RUN_TESTS="true"
-                INSTALL_DEPS="true"
-                shift
-                ;;
-            -l|--lint)
-                RUN_LINT="true"
-                INSTALL_DEPS="true"
-                shift
-                ;;
-            --all-variants)
-                RUN_ALL_VARIANTS=$(parse_bool "${2}")
-                shift 2
-                ;;
             --clean)
-                CLEAN="true"
+                clean="true"
                 shift
                 ;;
             *)
@@ -200,54 +225,16 @@ main() {
         return 1
     fi
 
-    if ! command -v uv &> /dev/null; then
-        echo "Error: uv is not installed. See: https://docs.astral.sh/uv/getting-started/installation/" >&2
-        return 1
-    fi
-
-    if [[ "${CLEAN}" == "true" ]] && [[ -d "${OUTPUT_DIR}" ]]; then
-        echo "Cleaning output directory: ${OUTPUT_DIR}"
-        rm -rf "${OUTPUT_DIR}"
-    fi
-
     mkdir -p "${OUTPUT_DIR}"
-
-    if [[ "${RUN_ALL_VARIANTS}" == "true" ]]; then
-        "${SCRIPT_DIR}/test-all-variants.bash" --output "${OUTPUT_DIR}"
-        return $?
-    fi
 
     local project_dir="${OUTPUT_DIR}/${PROJECT_NAME}"
 
-    "${SCRIPT_DIR}/generate.bash" \
-        --output "${OUTPUT_DIR}" \
-        --name "${PROJECT_NAME}" \
-        --sentry "${SENTRY}" \
-        --async "${ASYNC}" \
-        --cli "${CLI}" \
-        --web "${WEB}" \
-        --api "${API}" \
-        --api-auth "${API_AUTH}" \
-        --api-lambda "${API_LAMBDA}" \
-        --api-lambda-tracing "${API_LAMBDA_TRACING}" \
-        --api-lambda-metrics "${API_LAMBDA_METRICS}" \
-        --api-pagination "${API_PAGINATION}" \
-        --api-versioning "${API_VERSIONING}" \
-        --docker "${DOCKER}" \
-        --pycharm "${PYCHARM}" \
-        --clean
-
-    if [[ "${INSTALL_DEPS}" == "true" ]]; then
-        "${SCRIPT_DIR}/install.bash" "${project_dir}"
+    if [[ "${clean}" == "true" ]] && [[ -d "${project_dir}" ]]; then
+        echo "Removing existing project directory: ${project_dir}"
+        rm -rf "${project_dir}"
     fi
 
-    if [[ "${RUN_LINT}" == "true" ]]; then
-        "${SCRIPT_DIR}/lint.bash" "${project_dir}"
-    fi
-
-    if [[ "${RUN_TESTS}" == "true" ]]; then
-        "${SCRIPT_DIR}/test.bash" "${project_dir}"
-    fi
+    generate_project "${OUTPUT_DIR}" "${PROJECT_NAME}" "${SENTRY}" "${ASYNC}" "${CLI}" "${WEB}" "${API}" "${API_AUTH}" "${API_LAMBDA}" "${API_LAMBDA_TRACING}" "${API_LAMBDA_METRICS}" "${API_PAGINATION}" "${API_VERSIONING}" "${DOCKER}" "${PYCHARM}"
 
     return 0
 }

@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o noclobber
+set -o pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(dirname "${SCRIPT_DIR}")"
+DEFAULT_OUTPUT_DIR="${TEMPLATE_DIR}/.test-output"
+
+OUTPUT_DIR="${DEFAULT_OUTPUT_DIR}"
+
+help() {
+    cat <<EOF
+Test all variant combinations of the cookiecutter template.
+
+Generates projects with different option combinations and runs:
+  1. Project generation
+  2. Dependency installation
+  3. Linting and type checks
+  4. Tests
+
+Usage: $(basename "$0") [OPTIONS]
+
+Options:
+    -h, --help       Show this help message
+    -o, --output     Output directory (default: ${DEFAULT_OUTPUT_DIR})
+    --clean          Remove output directory before starting
+
+Variants tested:
+  - minimal, no-sentry, async-only, cli-only, web-only
+  - api-only, api-auth, api-lambda, api-lambda-traced, api-lambda-full
+  - api-pagination, api-versioning, async-cli, async-web, async-api
+  - async-api-auth, async-api-full, full-no-api, full-no-web, full
+
+Examples:
+    $(basename "$0")
+    $(basename "$0") --clean
+    $(basename "$0") --output /tmp/variants
+EOF
+    return 0
+}
+
+test_all_variants() {
+    local output_dir="${1}"
+    # Format: sentry:async:cli:web:api:api_auth:api_lambda:api_lambda_tracing:api_lambda_metrics:api_pagination:api_versioning:name
+    local variants=(
+        "true:false:false:false:false:false:false:false:false:false:false:minimal"
+        "false:false:false:false:false:false:false:false:false:false:false:no-sentry"
+        "true:true:false:false:false:false:false:false:false:false:false:async-only"
+        "true:false:true:false:false:false:false:false:false:false:false:cli-only"
+        "true:false:false:true:false:false:false:false:false:false:false:web-only"
+        "true:false:false:false:true:false:false:false:false:false:false:api-only"
+        "true:false:false:false:true:true:false:false:false:false:false:api-auth"
+        "true:false:false:false:true:false:true:false:false:false:false:api-lambda"
+        "true:false:false:false:true:false:true:true:false:false:false:api-lambda-traced"
+        "true:false:false:false:true:false:true:true:true:false:false:api-lambda-full"
+        "true:false:false:false:true:false:false:false:false:true:false:api-pagination"
+        "true:false:false:false:true:false:false:false:false:false:true:api-versioning"
+        "true:true:true:false:false:false:false:false:false:false:false:async-cli"
+        "true:true:false:true:false:false:false:false:false:false:false:async-web"
+        "true:true:false:false:true:false:false:false:false:false:false:async-api"
+        "true:true:false:false:true:true:false:false:false:false:false:async-api-auth"
+        "true:true:false:false:true:true:true:true:true:true:true:async-api-full"
+        "true:true:true:true:false:false:false:false:false:false:false:full-no-api"
+        "true:true:true:false:true:true:false:false:false:false:false:full-no-web"
+        "true:true:true:true:true:true:true:true:true:true:true:full"
+    )
+
+    local failed=()
+    local passed=()
+
+    for variant in "${variants[@]}"; do
+        IFS=':' read -r sentry_val async_val cli_val web_val api_val api_auth_val api_lambda_val api_lambda_tracing_val api_lambda_metrics_val api_pagination_val api_versioning_val name <<< "${variant}"
+        local project_name="test-${name}"
+        local project_dir="${output_dir}/${project_name}"
+
+        echo ""
+        echo "========================================"
+        echo "Testing variant: ${name}"
+        echo "========================================"
+
+        if [[ -d "${project_dir}" ]]; then
+            rm -rf "${project_dir}"
+        fi
+
+        if "${SCRIPT_DIR}/generate.bash" \
+            --output "${output_dir}" \
+            --name "${project_name}" \
+            --sentry "${sentry_val}" \
+            --async "${async_val}" \
+            --cli "${cli_val}" \
+            --web "${web_val}" \
+            --api "${api_val}" \
+            --api-auth "${api_auth_val}" \
+            --api-lambda "${api_lambda_val}" \
+            --api-lambda-tracing "${api_lambda_tracing_val}" \
+            --api-lambda-metrics "${api_lambda_metrics_val}" \
+            --api-pagination "${api_pagination_val}" \
+            --api-versioning "${api_versioning_val}" \
+            --docker "true" \
+            --pycharm "false"; then
+            if "${SCRIPT_DIR}/install.bash" "${project_dir}"; then
+                if "${SCRIPT_DIR}/lint.bash" "${project_dir}"; then
+                    if "${SCRIPT_DIR}/test.bash" "${project_dir}"; then
+                        passed+=("${name}")
+                        echo "PASSED: ${name}"
+                    else
+                        failed+=("${name} (tests failed)")
+                        echo "FAILED: ${name} (tests failed)"
+                    fi
+                else
+                    failed+=("${name} (lint failed)")
+                    echo "FAILED: ${name} (lint failed)"
+                fi
+            else
+                failed+=("${name} (install failed)")
+                echo "FAILED: ${name} (install failed)"
+            fi
+        else
+            failed+=("${name} (generation failed)")
+            echo "FAILED: ${name} (generation failed)"
+        fi
+    done
+
+    echo ""
+    echo "========================================"
+    echo "Summary"
+    echo "========================================"
+    echo "Passed: ${#passed[@]}"
+    for p in "${passed[@]}"; do
+        echo "  - ${p}"
+    done
+    echo "Failed: ${#failed[@]}"
+    for f in "${failed[@]}"; do
+        echo "  - ${f}"
+    done
+
+    if [[ ${#failed[@]} -gt 0 ]]; then
+        return 1
+    fi
+    return 0
+}
+
+main() {
+    local clean="false"
+
+    while [[ $# -gt 0 ]]; do
+        case "${1}" in
+            -h|--help)
+                help
+                return 0
+                ;;
+            -o|--output)
+                OUTPUT_DIR="${2}"
+                shift 2
+                ;;
+            --clean)
+                clean="true"
+                shift
+                ;;
+            *)
+                echo "Unknown option: ${1}" >&2
+                help >&2
+                return 1
+                ;;
+        esac
+    done
+
+    if ! command -v cookiecutter &> /dev/null; then
+        echo "Error: cookiecutter is not installed. Install with: pipx install cookiecutter" >&2
+        return 1
+    fi
+
+    if ! command -v uv &> /dev/null; then
+        echo "Error: uv is not installed. See: https://docs.astral.sh/uv/getting-started/installation/" >&2
+        return 1
+    fi
+
+    if [[ "${clean}" == "true" ]] && [[ -d "${OUTPUT_DIR}" ]]; then
+        echo "Cleaning output directory: ${OUTPUT_DIR}"
+        rm -rf "${OUTPUT_DIR}"
+    fi
+
+    mkdir -p "${OUTPUT_DIR}"
+
+    test_all_variants "${OUTPUT_DIR}"
+
+    return $?
+}
+
+main "$@"

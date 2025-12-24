@@ -173,6 +173,14 @@ convention = "google"
 "__init__.py" = ["E402", "F401"]
 "tests/**/*.py" = ["D", "S101", "S104", "S105"]
 
+[tool.ruff.lint.isort]
+known-first-party = [
+    "{{cookiecutter.package_name}}",
+    "{{cookiecutter.package_name}}_cli",
+    "{{cookiecutter.package_name}}_web",
+    "{{cookiecutter.package_name}}_api",
+]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

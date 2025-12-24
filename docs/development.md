@@ -22,56 +22,68 @@ pre-commit install
 
 ## Testing the Template
 
-The `scripts/test-template.bash` script generates projects from the template and validates them.
+The `scripts/` directory contains modular scripts for testing:
 
-### Generate a single variant
+| Script                   | Purpose                                       |
+|--------------------------|-----------------------------------------------|
+| `test-template.bash`     | Orchestration script (calls all of the below) |
+| `generate.bash`          | Generate a project from the template          |
+| `install.bash`           | Install dependencies (`uv sync`)              |
+| `lint.bash`              | Run linting and type checks                   |
+| `test.bash`              | Run tests with pytest                         |
+| `test-all-variants.bash` | Test all variant combinations                 |
 
 ```shell
-# Generate with defaults (async + cli)
+# Test all variant combinations (default behavior)
 ./scripts/test-template.bash
 
-# Generate async web project and install dependencies
-./scripts/test-template.bash --web true --async true --install
+# Clean output and test all variants
+./scripts/test-template.bash --clean
 
-# Clean output, generate, install deps, and run tests
-./scripts/test-template.bash --clean --web true --test
+# Generate and test a single project with specific options
+./scripts/test-template.bash --all-variants false --web true --api true --test
 
 # Custom project name and output directory
-./scripts/test-template.bash --name my-test --output /tmp/test-output --install
+./scripts/test-template.bash --all-variants false --name my-test --output /tmp/test-output --install
+
+# Use individual scripts directly
+./scripts/test-all-variants.bash --clean
 ```
 
-### Test all variant combinations
+Variants tested include:
 
-```shell
-# Generate and install deps for all 8 variant combinations
-./scripts/test-template.bash --all-variants
-```
+- `minimal` - sentry only, no optional features
+- `no-sentry` - no features at all
+- `async-only`, `cli-only`, `web-only`, `api-only` - single features
+- `api-auth`, `api-lambda`, `api-lambda-traced`, `api-lambda-full` - API variants
+- `api-pagination`, `api-versioning` - API extensions
+- `async-cli`, `async-web`, `async-api`, `async-api-auth`, `async-api-full` - async combinations
+- `full-no-api`, `full-no-web`, `full` - comprehensive variants
 
-This tests:
-- `minimal` - no async, cli, or web
-- `async-only` - async without cli or web
-- `cli-only` - cli without async or web
-- `web-only` - web without async or cli
-- `async-cli` - async + cli
-- `async-web` - async + web (uses uvicorn)
-- `cli-web` - cli + web (uses gunicorn)
-- `full` - all features enabled
-
-### Script options
+### Script Options (test-template.bash)
 
 ```
--h, --help          Show help message
--a, --async BOOL    Enable async support (default: true)
--c, --cli BOOL      Enable CLI support (default: true)
--w, --web BOOL      Enable web/Django support (default: false)
--d, --docker BOOL   Enable Docker support (default: true)
--p, --pycharm BOOL  Enable PyCharm support (default: false)
--o, --output DIR    Output directory (default: .test-output)
--n, --name NAME     Project name (default: test-project)
--i, --install       Install dependencies after generation
--t, --test          Run tests after generation (implies --install)
---clean             Remove output directory before generation
---all-variants      Generate and test all variant combinations
+-h, --help                   Show help message
+-s, --sentry BOOL            Enable Sentry integration (default: true)
+-a, --async BOOL             Enable async support (default: true)
+-c, --cli BOOL               Enable CLI support (default: true)
+-w, --web BOOL               Enable web/Django support (default: true)
+--api BOOL                   Enable FastAPI support (default: true)
+--api-auth BOOL              Enable API auth support (default: true)
+--api-lambda BOOL            Enable AWS Lambda hosting (default: true)
+--api-lambda-tracing BOOL    Enable Powertools tracing (default: true)
+--api-lambda-metrics BOOL    Enable Powertools metrics (default: true)
+--api-pagination BOOL        Enable pagination utilities (default: true)
+--api-versioning BOOL        Enable API versioning (default: true)
+-d, --docker BOOL            Enable Docker support (default: true)
+-p, --pycharm BOOL           Enable PyCharm support (default: true)
+-o, --output DIR             Output directory (default: .test-output)
+-n, --name NAME              Project name (default: test-project)
+-i, --install                Install dependencies after generation
+-t, --test                   Run tests after generation (implies --install)
+-l, --lint                   Run linting after generation (implies --install)
+--all-variants BOOL          Generate and test all variant combinations (default: true)
+--clean                      Remove output directory before generation
 ```
 
 Generated projects are placed in `.test-output/` by default (gitignored).
