@@ -89,7 +89,6 @@ jobs:
         with:
           name: project-${{ matrix.name }}
           path: .test-output/test-${{ matrix.name }}
-          include-hidden-files: true
           retention-days: 1
 
   lint:
@@ -109,14 +108,22 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ matrix.variant }}-${{ hashFiles('variants.json') }}
+          restore-keys: |
+            uv-${{ matrix.variant }}-
+
       - name: Download project artifact
         uses: actions/download-artifact@v4
         with:
           name: project-${{ matrix.variant }}
           path: .test-output/test-${{ matrix.variant }}
 
-      - name: Restore executable permissions
-        run: chmod -R +x ".test-output/test-${{ matrix.variant }}/.venv/bin"
+      - name: Install dependencies
+        run: ./scripts/install.bash ".test-output/test-${{ matrix.variant }}"
 
       - name: Run lint
         run: ./scripts/lint.bash ".test-output/test-${{ matrix.variant }}"
@@ -138,14 +145,22 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ matrix.variant }}-${{ hashFiles('variants.json') }}
+          restore-keys: |
+            uv-${{ matrix.variant }}-
+
       - name: Download project artifact
         uses: actions/download-artifact@v4
         with:
           name: project-${{ matrix.variant }}
           path: .test-output/test-${{ matrix.variant }}
 
-      - name: Restore executable permissions
-        run: chmod -R +x ".test-output/test-${{ matrix.variant }}/.venv/bin"
+      - name: Install dependencies
+        run: ./scripts/install.bash ".test-output/test-${{ matrix.variant }}"
 
       - name: Run tests
         run: ./scripts/test.bash ".test-output/test-${{ matrix.variant }}"
