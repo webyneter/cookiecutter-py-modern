@@ -8,15 +8,11 @@
 # 1. Parse the requirements.txt diff to find updated packages
 # 2. Apply those updates to the generated project before testing
 #
-# Trigger: Push to main or PR with changes to reference/
+# Trigger: PR with changes to reference/
 
 name: Test Reference
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "reference/**"
   pull_request:
     paths:
       - "reference/**"
