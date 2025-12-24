@@ -1,0 +1,64 @@
+# Generate Requirements Workflow
+#
+# Purpose: Regenerates reference/requirements.txt when template dependencies change.
+# This keeps the requirements.txt in sync with the template's pyproject.toml and uv.lock,
+# allowing Dependabot to scan for outdated dependencies.
+#
+# Trigger: Push to main with changes to template's pyproject.toml or uv.lock
+
+name: Generate Requirements
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "\\{\\{cookiecutter.project_name\\}\\}/pyproject.toml"
+      - "\\{\\{cookiecutter.project_name\\}\\}/**/uv.lock"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: write
+
+jobs:
+  generate-requirements:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-environment
+
+      - uses: ./.github/actions/generate-variant
+        id: generate
+        with:
+          variant-name: full
+          clean: "true"
+
+      - name: Export requirements.txt
+        run: |
+          cd ${{ steps.generate.outputs.project-path }}
+          uv export --frozen --no-hashes --no-emit-project > ../../reference/requirements.txt
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet reference/requirements.txt; then
+            echo "changes=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "changes=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Commit and push
+        if: steps.check.outputs.changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reference/requirements.txt
+          git commit -m "chore(deps): regenerate requirements.txt from template"
+          git push
