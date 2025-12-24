@@ -51,31 +51,36 @@ EOF
 
 test_all_variants() {
     local output_dir="${1}"
-    # Format: sentry:async:cli:web:api:api_auth:api_lambda:api_lambda_tracing:api_lambda_metrics:api_pagination:api_versioning:name
-    local variants=(
-        # Base cases
-        "true:false:false:false:false:false:false:false:false:false:false:minimal"
-        # Single feature variants
-        "true:false:true:false:false:false:false:false:false:false:false:cli-only"
-        "true:false:false:true:false:false:false:false:false:false:false:web-only"
-        "true:false:false:false:true:false:false:false:false:false:false:api-only"
-        # API feature combinations
-        "true:false:false:false:true:true:false:false:false:false:false:api-auth"
-        "true:false:false:false:true:false:true:false:false:false:false:api-lambda"
-        # Async combinations
-        "true:true:false:true:false:false:false:false:false:false:false:async-web"
-        "true:true:false:false:true:true:false:false:false:false:false:async-api-auth"
-        # Full stack variants
-        "true:true:true:true:false:false:false:false:false:false:false:full-no-api"
-        "true:true:true:false:true:true:true:true:true:true:true:full-no-web"
-        "true:true:true:true:true:true:true:true:true:true:true:full"
-    )
+    local variants_file="${TEMPLATE_DIR}/variants.json"
+
+    if [[ ! -f "${variants_file}" ]]; then
+        echo "Error: variants.json not found at ${variants_file}" >&2
+        return 1
+    fi
 
     local failed=()
     local passed=()
+    local variant_count
+    variant_count=$(jq '.variants | length' "${variants_file}")
 
-    for variant in "${variants[@]}"; do
-        IFS=':' read -r sentry_val async_val cli_val web_val api_val api_auth_val api_lambda_val api_lambda_tracing_val api_lambda_metrics_val api_pagination_val api_versioning_val name <<< "${variant}"
+    for ((i = 0; i < variant_count; i++)); do
+        local name sentry_val async_val cli_val web_val api_val
+        local api_auth_val api_lambda_val api_lambda_tracing_val api_lambda_metrics_val
+        local api_pagination_val api_versioning_val
+
+        name=$(jq -r ".variants[$i].name" "${variants_file}")
+        sentry_val=$(jq -r ".variants[$i].sentry" "${variants_file}")
+        async_val=$(jq -r ".variants[$i].async" "${variants_file}")
+        cli_val=$(jq -r ".variants[$i].cli" "${variants_file}")
+        web_val=$(jq -r ".variants[$i].web" "${variants_file}")
+        api_val=$(jq -r ".variants[$i].api" "${variants_file}")
+        api_auth_val=$(jq -r ".variants[$i].api_auth" "${variants_file}")
+        api_lambda_val=$(jq -r ".variants[$i].api_lambda" "${variants_file}")
+        api_lambda_tracing_val=$(jq -r ".variants[$i].api_lambda_tracing" "${variants_file}")
+        api_lambda_metrics_val=$(jq -r ".variants[$i].api_lambda_metrics" "${variants_file}")
+        api_pagination_val=$(jq -r ".variants[$i].api_pagination" "${variants_file}")
+        api_versioning_val=$(jq -r ".variants[$i].api_versioning" "${variants_file}")
+
         local project_name="test-${name}"
         local project_dir="${output_dir}/${project_name}"
 
@@ -170,6 +175,11 @@ main() {
                 ;;
         esac
     done
+
+    if ! command -v jq &> /dev/null; then
+        echo "Error: jq is not installed. Install with your package manager (e.g., apt install jq)" >&2
+        return 1
+    fi
 
     if ! command -v cookiecutter &> /dev/null; then
         echo "Error: cookiecutter is not installed. Install with: pipx install cookiecutter" >&2
