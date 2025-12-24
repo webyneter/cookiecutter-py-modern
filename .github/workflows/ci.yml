@@ -89,6 +89,7 @@ jobs:
         with:
           name: project-${{ matrix.name }}
           path: .test-output/test-${{ matrix.name }}
+          include-hidden-files: true
           retention-days: 1
 
   lint:
