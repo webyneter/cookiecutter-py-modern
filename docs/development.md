@@ -22,7 +22,7 @@ pre-commit install
 
 ## Testing the Template
 
-The `scripts/test-template.sh` script generates projects from the template and validates them.
+The `scripts/test-template.bash` script generates projects from the template and validates them.
 
 ### Generate a single variant
 
