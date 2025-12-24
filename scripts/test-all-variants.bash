@@ -107,8 +107,7 @@ test_all_variants() {
             --api-lambda-metrics "${api_lambda_metrics_val}" \
             --api-pagination "${api_pagination_val}" \
             --api-versioning "${api_versioning_val}" \
-            --docker "true" \
-            --pycharm "false"; then
+            --docker "true"; then
             if "${SCRIPT_DIR}/install.bash" "${project_dir}"; then
                 if "${SCRIPT_DIR}/lint.bash" "${project_dir}"; then
                     if "${SCRIPT_DIR}/test.bash" "${project_dir}"; then

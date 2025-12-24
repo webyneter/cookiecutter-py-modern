@@ -24,14 +24,6 @@ Create a virtualenv, install dependencies, generate a dependency lock file--all 
 uv sync
 ```
 
-{% if cookiecutter.pycharm -%}
-Now, configure the newly-created `.venv` as your Python interpreter in PyCharm [as described in the official guide](https://www.jetbrains.com/help/pycharm/configuring-python-interpreter.html).
-
-Also, make sure to mark the following directories as follows:
-
-[//]: # (TODO: soures, excluded, etc. depending on whether web is true etc.)
-{%- endif %}
-
 Next up, install [`pre-commit`](https://pre-commit.com/) hooks:
 
 ```shell

@@ -78,8 +78,7 @@ jobs:
             --api-lambda-metrics "${API_LAMBDA_METRICS}" \
             --api-pagination "${API_PAGINATION}" \
             --api-versioning "${API_VERSIONING}" \
-            --docker "true" \
-            --pycharm "false"
+            --docker "true"
 
       - name: Install dependencies
         run: ./scripts/install.bash ".test-output/test-${{ matrix.name }}"

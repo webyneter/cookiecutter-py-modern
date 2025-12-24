@@ -52,7 +52,6 @@
   ],
   "format_line_length": 120,
   "coverage_fail_under": 80,
-  "pycharm": false,
   "docker": true,
   "sentry": false,
   "async": false,

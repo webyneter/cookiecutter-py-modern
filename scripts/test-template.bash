@@ -30,7 +30,6 @@ API_LAMBDA_METRICS="true"
 API_PAGINATION="true"
 API_VERSIONING="true"
 DOCKER="true"
-PYCHARM="true"
 OUTPUT_DIR="${DEFAULT_OUTPUT_DIR}"
 PROJECT_NAME="test-project"
 INSTALL_DEPS="true"
@@ -66,7 +65,6 @@ Options:
     --api-pagination BOOL        Enable pagination utilities (default: ${API_PAGINATION})
     --api-versioning BOOL        Enable API versioning (default: ${API_VERSIONING})
     -d, --docker BOOL            Enable Docker support (default: ${DOCKER})
-    -p, --pycharm BOOL           Enable PyCharm support (default: ${PYCHARM})
     -o, --output DIR             Output directory (default: ${DEFAULT_OUTPUT_DIR})
     -n, --name NAME              Project name (default: ${PROJECT_NAME})
     -i, --install                Install dependencies after generation
@@ -162,10 +160,6 @@ main() {
                 DOCKER=$(parse_bool "${2}")
                 shift 2
                 ;;
-            -p|--pycharm)
-                PYCHARM=$(parse_bool "${2}")
-                shift 2
-                ;;
             -o|--output)
                 OUTPUT_DIR="${2}"
                 shift 2
@@ -243,7 +237,6 @@ main() {
         --api-pagination "${API_PAGINATION}" \
         --api-versioning "${API_VERSIONING}" \
         --docker "${DOCKER}" \
-        --pycharm "${PYCHARM}" \
         --clean
 
     if [[ "${INSTALL_DEPS}" == "true" ]]; then

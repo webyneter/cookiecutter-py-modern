@@ -82,7 +82,6 @@ Variants tested (11 total):
 --api-pagination BOOL        Enable pagination utilities (default: true)
 --api-versioning BOOL        Enable API versioning (default: true)
 -d, --docker BOOL            Enable Docker support (default: true)
--p, --pycharm BOOL           Enable PyCharm support (default: true)
 -o, --output DIR             Output directory (default: .test-output)
 -n, --name NAME              Project name (default: test-project)
 -i, --install                Install dependencies after generation

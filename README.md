@@ -105,7 +105,6 @@ uv run uvicorn my_project_api.main:app --reload
 | `api_pagination`                | Add fastapi-pagination (requires api)                  |
 | `api_versioning`                | URL-prefix versioning /v1/ (requires api)              |
 | `docker`                        | Include Dockerfile and docker configs                  |
-| `pycharm`                       | Include PyCharm/IntelliJ configuration                 |
 
 ## Contributing
 
