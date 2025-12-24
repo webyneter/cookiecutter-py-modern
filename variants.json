@@ -1,5 +1,5 @@
 {
-  "_comment": "TESTING: Limited to minimal variant only. Restore all variants after CI testing.",
+  "_comment": "TESTING: Limited to 3 variants. Restore all variants after CI testing.",
   "variants": [
     {
       "name": "minimal",
@@ -14,6 +14,34 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false
+    },
+    {
+      "name": "api-lambda",
+      "sentry": true,
+      "async": false,
+      "cli": false,
+      "web": false,
+      "api": true,
+      "api_auth": false,
+      "api_lambda": true,
+      "api_lambda_tracing": false,
+      "api_lambda_metrics": false,
+      "api_pagination": false,
+      "api_versioning": false
+    },
+    {
+      "name": "full",
+      "sentry": true,
+      "async": true,
+      "cli": true,
+      "web": true,
+      "api": true,
+      "api_auth": true,
+      "api_lambda": true,
+      "api_lambda_tracing": true,
+      "api_lambda_metrics": true,
+      "api_pagination": true,
+      "api_versioning": true
     }
   ]
 }
