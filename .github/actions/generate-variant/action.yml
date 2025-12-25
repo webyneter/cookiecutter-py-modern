@@ -1,0 +1,98 @@
+# Generate Variant Action
+#
+# Generates a project from the cookiecutter template using a variant
+# defined in variants.json. Optionally installs dependencies.
+
+name: Generate Variant
+description: Generate a project variant from variants.json
+
+inputs:
+  variant-name:
+    description: Name of the variant in variants.json
+    required: true
+  output-name:
+    description: Name for the generated project (defaults to variant-name)
+    required: false
+    default: ""
+  clean:
+    description: Remove existing project directory before generation
+    required: false
+    default: "false"
+  install:
+    description: Install dependencies after generation
+    required: false
+    default: "true"
+  cache-key-suffix:
+    description: Suffix for uv cache key
+    required: false
+    default: ""
+  docker:
+    description: Override Docker support (if not set, reads from variant in variants.json)
+    required: false
+    default: ""
+
+outputs:
+  project-path:
+    description: Path to the generated project
+    value: ${{ steps.generate.outputs.project-path }}
+
+runs:
+  using: composite
+  steps:
+    - name: Restore uv cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ inputs.variant-name }}${{ inputs.cache-key-suffix }}-${{ hashFiles('variants.json') }}
+        restore-keys: |
+          uv-${{ inputs.variant-name }}${{ inputs.cache-key-suffix }}-
+
+    - name: Generate project
+      id: generate
+      shell: bash
+      env:
+        VARIANT_NAME: ${{ inputs.variant-name }}
+        OUTPUT_NAME: ${{ inputs.output-name }}
+        CLEAN: ${{ inputs.clean }}
+        DOCKER: ${{ inputs.docker }}
+      run: |
+        variant=$(jq -r --arg name "${VARIANT_NAME}" '.variants[] | select(.name == $name)' variants.json)
+
+        if [[ -z "${variant}" || "${variant}" == "null" ]]; then
+          echo "Error: variant '${VARIANT_NAME}' not found in variants.json" >&2
+          exit 1
+        fi
+
+        project_name="${OUTPUT_NAME:-${VARIANT_NAME}}"
+
+        clean_flag=""
+        if [[ "${CLEAN}" == "true" ]]; then
+          clean_flag="--clean"
+        fi
+
+        docker_value="${DOCKER}"
+        if [[ -z "${docker_value}" ]]; then
+          docker_value=$(echo "${variant}" | jq -r '.docker // true')
+        fi
+
+        ./scripts/generate.bash ${clean_flag} \
+          --name "${project_name}" \
+          --sentry "$(echo "${variant}" | jq -r '.sentry')" \
+          --async "$(echo "${variant}" | jq -r '.async')" \
+          --cli "$(echo "${variant}" | jq -r '.cli')" \
+          --web "$(echo "${variant}" | jq -r '.web')" \
+          --api "$(echo "${variant}" | jq -r '.api')" \
+          --api-auth "$(echo "${variant}" | jq -r '.api_auth')" \
+          --api-lambda "$(echo "${variant}" | jq -r '.api_lambda')" \
+          --api-lambda-tracing "$(echo "${variant}" | jq -r '.api_lambda_tracing')" \
+          --api-lambda-metrics "$(echo "${variant}" | jq -r '.api_lambda_metrics')" \
+          --api-pagination "$(echo "${variant}" | jq -r '.api_pagination')" \
+          --api-versioning "$(echo "${variant}" | jq -r '.api_versioning')" \
+          --docker "${docker_value}"
+
+        echo "project-path=.test-output/${project_name}" >> "${GITHUB_OUTPUT}"
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: ./scripts/install.bash "${{ steps.generate.outputs.project-path }}"

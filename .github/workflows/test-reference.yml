@@ -1,0 +1,123 @@
+# Test Reference Workflow
+#
+# Purpose: Tests dependency updates proposed by Dependabot.
+# Generates the full variant, applies the updated package version from the PR,
+# then runs lint + tests to verify the new dependency version is compatible.
+#
+# This workflow is separate from CI because it needs to:
+# 1. Parse the requirements.txt diff to find updated packages
+# 2. Apply those updates to the generated project before testing
+#
+# Trigger: PR with changes to reference/
+
+name: Test Reference
+
+on:
+  pull_request:
+    paths:
+      - "reference/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  generate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-environment
+
+      - uses: ./.github/actions/generate-variant
+        id: generate
+        with:
+          variant-name: full
+          clean: "true"
+          cache-key-suffix: "-reference"
+
+      - name: Apply dependency updates
+        working-directory: ${{ steps.generate.outputs.project-path }}
+        run: |
+          if ! git -C ../.. show origin/main:reference/requirements.txt &>/dev/null; then
+            echo "No requirements.txt on origin/main - skipping dependency updates (initial PR)"
+            exit 0
+          fi
+
+          while read -r line; do
+            pkg=$(echo "${line}" | cut -d'=' -f1)
+            ver=$(echo "${line}" | grep -oP '==\K[0-9a-zA-Z.]+')
+            if [[ -n "${pkg}" && -n "${ver}" ]]; then
+              echo "Updating ${pkg} to ${ver}"
+              uv add "${pkg}==${ver}" || echo "Warning: failed to add ${pkg}==${ver}"
+            fi
+          done < <(git -C ../.. diff origin/main -- reference/requirements.txt | grep '^+[^+]' | sed 's/^+//')
+
+      - name: Upload project artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-reference
+          path: ${{ steps.generate.outputs.project-path }}
+          retention-days: 1
+
+  lint:
+    needs: generate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup-environment
+
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-full-reference-${{ hashFiles('variants.json') }}
+          restore-keys: |
+            uv-full-reference-
+
+      - name: Download project artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: project-reference
+          path: .test-output/full
+
+      - name: Install dependencies
+        run: ./scripts/install.bash .test-output/full
+
+      - name: Run lint
+        run: ./scripts/lint.bash .test-output/full
+
+  test:
+    needs: generate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup-environment
+
+      - name: Restore uv cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-full-reference-${{ hashFiles('variants.json') }}
+          restore-keys: |
+            uv-full-reference-
+
+      - name: Download project artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: project-reference
+          path: .test-output/full
+
+      - name: Install dependencies
+        run: ./scripts/install.bash .test-output/full
+
+      - name: Run tests
+        run: ./scripts/test.bash .test-output/full

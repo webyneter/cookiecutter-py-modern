@@ -1,0 +1,29 @@
+# Setup Environment Action
+#
+# Sets up the development environment for cookiecutter template operations.
+# Installs Python, uv, and cookiecutter.
+#
+# Note: This action does NOT include checkout. The workflow must checkout first
+# before using this action.
+
+name: Setup Environment
+description: Set up Python, uv, and cookiecutter for template operations
+
+inputs:
+  python-version:
+    description: Python version to use
+    required: false
+    default: "3.12"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - uses: astral-sh/setup-uv@v7
+
+    - name: Install cookiecutter
+      shell: bash
+      run: pipx install cookiecutter
