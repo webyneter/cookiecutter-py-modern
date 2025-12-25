@@ -82,7 +82,7 @@ jobs:
             uv-full-reference-
 
       - name: Download project artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: project-reference
           path: .test-output/full
@@ -111,7 +111,7 @@ jobs:
             uv-full-reference-
 
       - name: Download project artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: project-reference
           path: .test-output/full
