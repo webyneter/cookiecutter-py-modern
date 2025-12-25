@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/license-MIT%20%7C%20Apache--2.0%20%7C%20GPL--3.0-blue.svg)](LICENSE)
 [![Cookiecutter](https://img.shields.io/badge/built%20with-Cookiecutter-ff69b4.svg)](https://github.com/cookiecutter/cookiecutter)
 
-A modern, batteries-included Cookiecutter template for Python and API projects.
+A modern, batteries-included Cookiecutter template for Python, API, and Web projects.
 
 Generate production-ready scaffolding with optional support for CLI applications, web backends, REST APIs, serverless
 deployments, and more.
