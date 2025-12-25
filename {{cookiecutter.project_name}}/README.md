@@ -138,10 +138,10 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 
 ## Credits
 
-This project was generated from [@webyneter]'s [Py-Modern Cookiecutter] template.
+This project was generated from [@webyneter]'s [Cookiecutter Python Modern] template.
 
 [@webyneter]: https://github.com/webyneter
-[Py-Modern Cookiecutter]: https://github.com/webyneter/cookiecutter-py-modern
+[Cookiecutter Python Modern]: https://github.com/webyneter/cookiecutter-py-modern
 [file an issue]: https://github.com/{{cookiecutter.github_user}}/{{cookiecutter.project_name}}/issues
 
 <!-- github-only -->
