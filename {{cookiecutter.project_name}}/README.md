@@ -2,7 +2,9 @@
 
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 ![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)
+{%- if cookiecutter.license != 'None' %}
 [![License](https://img.shields.io/pypi/l/{{cookiecutter.project_name}})][license]
+{%- endif %}
 
 ## Features
 
@@ -128,9 +130,12 @@ For detailed documentation, see the [docs](docs/index.md) directory, which inclu
 
 Contributions are very welcome. To learn more, see the [Contributor Guide].
 
+{%- if cookiecutter.license != 'None' %}
+
 ## License
 
 Distributed under the terms of the [{{cookiecutter.license.replace("-", " ")}} license][license], _{{cookiecutter.friendly_name}}_ is free and open source software.
+{%- endif %}
 
 ## Issues
 
@@ -146,6 +151,8 @@ This project was generated from [@webyneter]'s [Cookiecutter Python Modern] temp
 
 <!-- github-only -->
 
+{%- if cookiecutter.license != 'None' %}
 [license]: https://github.com/{{cookiecutter.github_user}}/{{cookiecutter.project_name}}/blob/main/LICENSE
+{%- endif %}
 [contributor guide]: https://github.com/{{cookiecutter.github_user}}/{{cookiecutter.project_name}}/blob/main/CONTRIBUTING.md
 [command-line reference]: https://{{cookiecutter.project_name}}.readthedocs.io/en/latest/usage.html

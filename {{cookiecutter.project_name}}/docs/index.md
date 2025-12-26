@@ -20,4 +20,6 @@ Welcome to the {{ cookiecutter.friendly_name }} documentation.
 
 - [README](../README.md) - Project overview, setup instructions, and usage
 - [Contributing](../CONTRIBUTING.md) - Guidelines for contributing to this project
+{%- if cookiecutter.license != 'None' %}
 - [License](../LICENSE) - Project license information
+{%- endif %}
