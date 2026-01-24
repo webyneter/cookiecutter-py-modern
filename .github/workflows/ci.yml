@@ -78,7 +78,7 @@ jobs:
             uv-${{ matrix.variant }}-
 
       - name: Download project artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: project-${{ matrix.variant }}
           path: .test-output/test-${{ matrix.variant }}
@@ -111,7 +111,7 @@ jobs:
             uv-${{ matrix.variant }}-
 
       - name: Download project artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: project-${{ matrix.variant }}
           path: .test-output/test-${{ matrix.variant }}
