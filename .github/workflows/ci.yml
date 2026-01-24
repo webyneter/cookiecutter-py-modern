@@ -50,7 +50,7 @@ jobs:
           output-name: test-${{ matrix.name }}
 
       - name: Upload project artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: project-${{ matrix.name }}
           path: ${{ steps.generate.outputs.project-path }}
