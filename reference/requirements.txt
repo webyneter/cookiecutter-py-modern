@@ -30,7 +30,7 @@ aws-xray-sdk==2.15.0
     # via aws-lambda-powertools
 bcrypt==5.0.0
     # via passlib
-botocore==1.42.33
+botocore==1.42.39
     # via aws-xray-sdk
 certifi==2025.11.12
     # via
@@ -123,7 +123,7 @@ fastapi==0.128.0
     # via
     #   fastapi-pagination
     #   full
-fastapi-pagination==0.15.6
+fastapi-pagination==0.15.8
     # via full
 filelock==3.20.1
     # via
@@ -167,7 +167,7 @@ joblib==1.5.3
     # via nltk
 librt==0.7.4 ; platform_python_implementation != 'PyPy'
     # via mypy
-mangum==0.20.0
+mangum==0.21.0
     # via full
 markdown-it-py==4.0.0
     # via rich
@@ -248,7 +248,6 @@ pytest==9.0.2
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-django
-    #   pytest-env
     #   pytest-mock
     #   pytest-randomly
     #   pytest-sugar
@@ -257,7 +256,6 @@ pytest==9.0.2
 pytest-asyncio==1.3.0
 pytest-cov==7.0.0
 pytest-django==4.11.1
-pytest-env==1.2.0
 pytest-mock==3.15.1
 pytest-randomly==4.0.1
 pytest-sugar==1.1.1
@@ -267,11 +265,12 @@ python-dateutil==2.9.0.post0
     # via botocore
 python-dotenv==1.2.1
     # via
+    #   full
     #   pydantic-settings
     #   uvicorn
 python-jose==3.5.0
     # via full
-python-multipart==0.0.21
+python-multipart==0.0.22
     # via full
 pyyaml==6.0.3
     # via
@@ -388,5 +387,5 @@ wcwidth==0.2.14
     # via prompt-toolkit
 websockets==15.0.1
     # via uvicorn
-wrapt==2.0.1
+wrapt==2.1.0
     # via aws-xray-sdk
