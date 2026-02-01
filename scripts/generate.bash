@@ -23,6 +23,7 @@ API_LAMBDA_METRICS="true"
 API_PAGINATION="true"
 API_VERSIONING="true"
 DOCKER="true"
+GITHUB_ACTIONS="true"
 
 help() {
     cat <<EOF
@@ -46,6 +47,7 @@ Options:
     --api-pagination BOOL        Enable pagination utilities (default: ${API_PAGINATION})
     --api-versioning BOOL        Enable API versioning (default: ${API_VERSIONING})
     -d, --docker BOOL            Enable Docker support (default: ${DOCKER})
+    --github-actions BOOL        Enable GitHub Actions CI/CD (default: ${GITHUB_ACTIONS})
     --clean                      Remove project directory if it exists before generation
 
 Examples:
@@ -86,13 +88,14 @@ generate_project() {
     local api_pagination_val="${12}"
     local api_versioning_val="${13}"
     local docker_val="${14}"
+    local github_actions_val="${15}"
 
     echo "Generating project '${project_name}' with options:"
     echo "  sentry=${sentry_val}, async=${async_val}, cli=${cli_val}, web=${web_val}"
     echo "  api=${api_val}, api_auth=${api_auth_val}, api_lambda=${api_lambda_val}"
     echo "  api_lambda_tracing=${api_lambda_tracing_val}, api_lambda_metrics=${api_lambda_metrics_val}"
     echo "  api_pagination=${api_pagination_val}, api_versioning=${api_versioning_val}"
-    echo "  docker=${docker_val}"
+    echo "  docker=${docker_val}, github_actions=${github_actions_val}"
     echo "  output: ${output_dir}/${project_name}"
 
     local config_file
@@ -122,6 +125,7 @@ default_context:
     api_pagination: ${api_pagination_val}
     api_versioning: ${api_versioning_val}
     include_uv_lock: true
+    github_actions: ${github_actions_val}
 EOF
 
     cookiecutter "${TEMPLATE_DIR}" \
@@ -200,6 +204,10 @@ main() {
                 DOCKER=$(parse_bool "${2}")
                 shift 2
                 ;;
+            --github-actions)
+                GITHUB_ACTIONS=$(parse_bool "${2}")
+                shift 2
+                ;;
             --clean)
                 clean="true"
                 shift
@@ -226,7 +234,7 @@ main() {
         rm -rf "${project_dir}"
     fi
 
-    generate_project "${OUTPUT_DIR}" "${PROJECT_NAME}" "${SENTRY}" "${ASYNC}" "${CLI}" "${WEB}" "${API}" "${API_AUTH}" "${API_LAMBDA}" "${API_LAMBDA_TRACING}" "${API_LAMBDA_METRICS}" "${API_PAGINATION}" "${API_VERSIONING}" "${DOCKER}"
+    generate_project "${OUTPUT_DIR}" "${PROJECT_NAME}" "${SENTRY}" "${ASYNC}" "${CLI}" "${WEB}" "${API}" "${API_AUTH}" "${API_LAMBDA}" "${API_LAMBDA_TRACING}" "${API_LAMBDA_METRICS}" "${API_PAGINATION}" "${API_VERSIONING}" "${DOCKER}" "${GITHUB_ACTIONS}"
 
     return 0
 }

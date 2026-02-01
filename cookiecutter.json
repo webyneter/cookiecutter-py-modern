@@ -64,5 +64,6 @@
   "api_lambda_powertools_metrics": false,
   "api_pagination": false,
   "api_versioning": false,
-  "include_uv_lock": true
+  "include_uv_lock": true,
+  "github_actions": true
 }

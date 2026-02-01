@@ -72,6 +72,7 @@ dependencies = [
     {%- endif %}
 
     "django-environ",
+    "python-dotenv",
 
     "httpx",
     "orjson",
@@ -114,7 +115,6 @@ dev = [
     {%- if cookiecutter.async %}
     "pytest-asyncio",
     {%- endif %}
-    "pytest-env",
     "pytest-cov",
     "pytest-sugar",
     "pytest-xdist",
@@ -260,6 +260,10 @@ addopts = """
 --cov-report=html
 --cov-report=xml
 --cov-fail-under={{cookiecutter.coverage_fail_under}}
+{%- if cookiecutter.api_lambda %}
+--ignore=tests/integration
+--ignore=tests/smoke
+{%- endif %}
 """
 log_cli = false
 log_cli_level = "INFO"
@@ -269,29 +273,3 @@ markers = [
 {%- if cookiecutter.async %}
 asyncio_mode = "auto"
 {%- endif %}
-env = [
-    "ENVIRONMENT=test",
-    {%- if cookiecutter.sentry %}
-    "SENTRY_DSN=",
-    {%- endif %}
-    {%- if cookiecutter.web %}
-    "DJANGO_SETTINGS_MODULE={{cookiecutter.package_name}}_web.settings",
-    "SECRET_KEY=test-secret-key-not-for-production",
-    "DEBUG=True",
-    "DATABASE_URL=sqlite:///test.sqlite3",
-    {%- endif %}
-    {%- if cookiecutter.api %}
-    "DEBUG=True",
-    {%- if cookiecutter.api_auth %}
-    "JWT_SECRET_KEY=test-jwt-secret-not-for-production",
-    {%- endif %}
-    {%- if cookiecutter.api_lambda %}
-    "POWERTOOLS_SERVICE_NAME=test-service",
-    "POWERTOOLS_LOG_LEVEL=DEBUG",
-    "POWERTOOLS_DEV=true",
-    {%- if cookiecutter.api_lambda_powertools_metrics %}
-    "POWERTOOLS_METRICS_NAMESPACE=test-namespace",
-    {%- endif %}
-    {%- endif %}
-    {%- endif %}
-]

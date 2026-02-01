@@ -13,7 +13,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": false
+      "docker": false,
+      "github_actions": true
     },
     {
       "name": "cli-only",
@@ -28,7 +29,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "web-only",
@@ -43,7 +45,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "api-only",
@@ -58,7 +61,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "api-auth",
@@ -73,7 +77,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "api-lambda",
@@ -88,7 +93,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "async-web",
@@ -103,7 +109,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "async-api-auth",
@@ -118,7 +125,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "full-no-api",
@@ -133,7 +141,8 @@
       "api_lambda_metrics": false,
       "api_pagination": false,
       "api_versioning": false,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "full-no-web",
@@ -148,7 +157,8 @@
       "api_lambda_metrics": true,
       "api_pagination": true,
       "api_versioning": true,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     },
     {
       "name": "full",
@@ -163,7 +173,8 @@
       "api_lambda_metrics": true,
       "api_pagination": true,
       "api_versioning": true,
-      "docker": true
+      "docker": true,
+      "github_actions": true
     }
   ]
 }

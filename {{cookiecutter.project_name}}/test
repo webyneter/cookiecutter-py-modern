@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o noclobber
+set -o pipefail
+
+help() {
+    cat <<EOF
+Run tests for {{cookiecutter.project_name}}.
+
+Usage: $(basename "$0") [COMMAND]
+
+Commands:
+    unit          Run unit tests with coverage (default)
+{%- if cookiecutter.api_lambda %}
+    integration   Run integration tests against Docker Compose Lambda
+    smoke         Run smoke tests against deployed Lambda (requires SMOKE_TEST_URL)
+{%- endif %}
+    help          Show this help message
+
+Examples:
+    $(basename "$0")              # Run unit tests
+    $(basename "$0") unit         # Run unit tests
+{%- if cookiecutter.api_lambda %}
+    $(basename "$0") integration  # Run integration tests
+    $(basename "$0") smoke        # Run smoke tests
+{%- endif %}
+EOF
+    return 0
+}
+
+run_unit_tests() {
+    echo "Running unit tests..."
+    uv run pytest tests/unit/
+}
+{%- if cookiecutter.api_lambda %}
+
+run_integration_tests() {
+    echo "Running integration tests..."
+    echo "Ensure Docker Compose is running: docker compose up -d"
+    uv run pytest tests/integration/ --no-cov -v
+}
+
+run_smoke_tests() {
+    if [[ -z "${SMOKE_TEST_URL:-}" ]]; then
+        echo "Error: SMOKE_TEST_URL environment variable is not set" >&2
+        echo "Set it to your deployed Lambda Function URL or API Gateway endpoint" >&2
+        return 1
+    fi
+
+    echo "Running smoke tests against: ${SMOKE_TEST_URL}"
+    uv run pytest tests/smoke/ --no-cov -v
+}
+{%- endif %}
+
+main() {
+    local command="${1:-unit}"
+
+    case "${command}" in
+        unit)
+            run_unit_tests
+            ;;
+{%- if cookiecutter.api_lambda %}
+        integration)
+            run_integration_tests
+            ;;
+        smoke)
+            run_smoke_tests
+            ;;
+{%- endif %}
+        help|-h|--help)
+            help
+            ;;
+        *)
+            echo "Unknown command: ${command}" >&2
+            help >&2
+            return 1
+            ;;
+    esac
+
+    return 0
+}
+
+main "$@"

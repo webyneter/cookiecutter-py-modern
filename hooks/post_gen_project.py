@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Post-generation hook to clean up conditional files and directories."""
 
+import os
 import shutil
+import stat
 from pathlib import Path
 
 PROJECT_DIR = Path.cwd()
 SRC_DIR = PROJECT_DIR / "src"
 TESTS_DIR = PROJECT_DIR / "tests"
+ENVS_DIR = PROJECT_DIR / "envs"
+DOCKER_DIR = PROJECT_DIR / "docker"
+
 
 def to_bool(value: str) -> bool:
     """Convert string to boolean, handling various formats."""
@@ -22,6 +27,7 @@ API = to_bool("{{ cookiecutter.api }}")
 API_AUTH = to_bool("{{ cookiecutter.api_auth }}")
 API_LAMBDA = to_bool("{{ cookiecutter.api_lambda }}")
 API_VERSIONING = to_bool("{{ cookiecutter.api_versioning }}")
+GITHUB_ACTIONS = to_bool("{{ cookiecutter.github_actions }}")
 
 
 def remove_path(path: Path) -> None:
@@ -32,41 +38,67 @@ def remove_path(path: Path) -> None:
         shutil.rmtree(path)
 
 
+def make_executable(path: Path) -> None:
+    """Make a file executable."""
+    if path.is_file():
+        current_mode = path.stat().st_mode
+        path.chmod(current_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
 def regenerate_root_conftest() -> None:
-    """Regenerate the root tests/conftest.py after API conftest leaked and overwrote it."""
-    conftest_content = '''"""Pytest configuration and fixtures."""
+    """Regenerate the root tests/conftest.py using dotenv pattern."""
+    base_content_without_os = '''"""Pytest configuration and fixtures."""
+
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load environment files before any other imports
+# This ensures env vars are available for module-level configuration
+_envs_dir = Path(__file__).parent.parent / "envs"
+
+# Load base environment (common settings)
+if (_base := _envs_dir / "base.env").exists():
+    load_dotenv(_base)
+
+# Load test environment (overrides base settings)
+if (_test := _envs_dir / "test.env").exists():
+    load_dotenv(_test, override=True)
+'''
+
+    base_content_with_os = '''"""Pytest configuration and fixtures."""
 
 import os
+from pathlib import Path
 
-import pytest
+from dotenv import load_dotenv
 
-# Set environment variables before any imports
-os.environ.setdefault("ENVIRONMENT", "test")
+# Load environment files before any other imports
+# This ensures env vars are available for module-level configuration
+_envs_dir = Path(__file__).parent.parent / "envs"
+
+# Load base environment (common settings)
+if (_base := _envs_dir / "base.env").exists():
+    load_dotenv(_base)
+
+# Load test environment (overrides base settings)
+if (_test := _envs_dir / "test.env").exists():
+    load_dotenv(_test, override=True)
 '''
 
-    if SENTRY:
-        conftest_content += 'os.environ.setdefault("SENTRY_DSN", "")\n'
+    django_setup = f'''
+# Configure Django before pytest-django tries to set up the test database
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{PACKAGE_NAME}_web.settings")
+
+import django  # noqa: E402
+
+django.setup()
+'''
 
     if WEB:
-        conftest_content += f'''os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{PACKAGE_NAME}_web.settings")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
-os.environ.setdefault("DEBUG", "True")
-os.environ.setdefault("DATABASE_URL", "sqlite:///test.sqlite3")
-'''
-
-    conftest_content += '''
-
-@pytest.fixture(autouse=True)
-def set_test_env_vars() -> None:
-    """Set required environment variables for testing."""
-    os.environ.setdefault("ENVIRONMENT", "test")
-'''
-
-    if SENTRY:
-        conftest_content += '    os.environ.setdefault("SENTRY_DSN", "")\n'
-
-    if WEB:
-        conftest_content += f'    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{PACKAGE_NAME}_web.settings")\n'
+        conftest_content = base_content_with_os + django_setup
+    else:
+        conftest_content = base_content_without_os
 
     conftest_path = TESTS_DIR / "conftest.py"
     conftest_path.write_text(conftest_content)
@@ -82,7 +114,6 @@ def cleanup_leaked_api_files() -> None:
         "__init__.py",
         "py.typed",
         "config.py",
-        "dependencies.py",
         "exceptions.py",
         "main.py",
         "pagination.py",
@@ -93,9 +124,11 @@ def cleanup_leaked_api_files() -> None:
     ]
     api_dirs = [
         "auth",
+        "dependencies",
         "middleware",
         "routers",
         "schemas",
+        "services",
         "v1",
     ]
 
@@ -105,20 +138,15 @@ def cleanup_leaked_api_files() -> None:
     for dirname in api_dirs:
         remove_path(SRC_DIR / dirname)
 
-    # Also clean up API test files that leaked
+    # Also clean up API test files that leaked to tests/unit/
+    unit_dir = TESTS_DIR / "unit"
     api_test_files = [
         "test_config.py",
         "test_health.py",
         "test_auth.py",
         "test_lambda_handler.py",
+        "conftest.py",
     ]
-
-    # The API conftest.py leaks to tests/conftest.py, overwriting the root conftest
-    # Remove it and regenerate a clean root conftest
-    leaked_conftest = TESTS_DIR / "conftest.py"
-    if leaked_conftest.exists():
-        remove_path(leaked_conftest)
-        regenerate_root_conftest()
     api_test_dirs = [
         "auth",
         "routers",
@@ -126,10 +154,10 @@ def cleanup_leaked_api_files() -> None:
     ]
 
     for filename in api_test_files:
-        remove_path(TESTS_DIR / filename)
+        remove_path(unit_dir / filename)
 
     for dirname in api_test_dirs:
-        remove_path(TESTS_DIR / dirname)
+        remove_path(unit_dir / dirname)
 
 
 def cleanup_leaked_cli_files() -> None:
@@ -137,8 +165,8 @@ def cleanup_leaked_cli_files() -> None:
     # Remove leaked CLI source files
     remove_path(SRC_DIR / "__main__.py")
 
-    # Remove leaked CLI test file
-    remove_path(TESTS_DIR / "test_cli.py")
+    # Remove leaked CLI test file (now in tests/unit/)
+    remove_path(TESTS_DIR / "unit" / "test_cli.py")
 
 
 def cleanup_leaked_web_files() -> None:
@@ -161,8 +189,8 @@ def cleanup_leaked_web_files() -> None:
     for dirname in web_dirs:
         remove_path(SRC_DIR / dirname)
 
-    # Remove leaked web test file
-    remove_path(TESTS_DIR / "test_django.py")
+    # Remove leaked web test file (now in tests/unit/)
+    remove_path(TESTS_DIR / "unit" / "test_django.py")
 
 
 def regenerate_api_init(package_name: str) -> None:
@@ -193,7 +221,6 @@ def cleanup_leaked_auth_files(package_name: str) -> None:
         return
 
     auth_files = [
-        "dependencies.py",
         "jwt.py",
         "schemas.py",
     ]
@@ -211,8 +238,8 @@ def cleanup_leaked_auth_files(package_name: str) -> None:
     # Remove auth.py router if it leaked to routers/
     remove_path(api_package / "routers" / "auth.py")
 
-    # Remove leaked auth test files
-    api_test_dir = TESTS_DIR / f"test_{package_name}_api"
+    # Remove leaked auth test files (now in tests/unit/)
+    api_test_dir = TESTS_DIR / "unit" / f"test_{package_name}_api"
     if api_test_dir.exists():
         remove_path(api_test_dir / "test_auth.py")
 
@@ -251,20 +278,38 @@ def cleanup_disabled_placeholder_dirs() -> None:
     placeholder names like '_api_disabled' that are always created,
     then cleaned up here based on the actual feature flags.
     """
+    # Source package placeholders
     if not API:
         remove_path(SRC_DIR / "_api_disabled")
-        remove_path(TESTS_DIR / "_test_api_disabled")
 
     if not CLI:
         remove_path(SRC_DIR / "_cli_disabled")
-        remove_path(TESTS_DIR / "_test_cli_disabled")
 
     if not WEB:
         remove_path(SRC_DIR / "_web_disabled")
-        remove_path(TESTS_DIR / "_test_web_disabled")
 
+    # Test package placeholders (now under tests/unit/)
+    unit_dir = TESTS_DIR / "unit"
+    if not API:
+        remove_path(unit_dir / "_test_api_disabled")
+
+    if not CLI:
+        remove_path(unit_dir / "_test_cli_disabled")
+
+    if not WEB:
+        remove_path(unit_dir / "_test_web_disabled")
+
+    # Lambda-related placeholders
     if not API_LAMBDA:
-        remove_path(PROJECT_DIR / "envs" / "_lambda_disabled")
+        remove_path(ENVS_DIR / "_docker_compose_disabled")
+        remove_path(DOCKER_DIR / "_lambda_api_disabled")
+        remove_path(TESTS_DIR / "_common_disabled")
+        remove_path(TESTS_DIR / "_integration_disabled")
+        remove_path(TESTS_DIR / "_smoke_disabled")
+
+    # GitHub Actions placeholder
+    if not GITHUB_ACTIONS:
+        remove_path(PROJECT_DIR / "_.github_disabled")
 
     # Nested placeholders inside API package (only relevant when API is enabled)
     if API:
@@ -275,10 +320,42 @@ def cleanup_disabled_placeholder_dirs() -> None:
             remove_path(api_package / "routers" / "_v1_disabled")
 
 
+def cleanup_docker_files() -> None:
+    """Clean up Docker-related files based on options."""
+    docker_compose = PROJECT_DIR / "docker-compose.yaml"
+    dockerignore = PROJECT_DIR / ".dockerignore"
+
+    if not DOCKER:
+        remove_path(DOCKER_DIR)
+        remove_path(docker_compose)
+        remove_path(dockerignore)
+    else:
+        if not WEB:
+            remove_path(DOCKER_DIR / "web")
+
+        # Standard API Dockerfile is only used when api=true and api_lambda=false
+        if not API or API_LAMBDA:
+            remove_path(DOCKER_DIR / "api")
+
+        # Lambda API Dockerfile is only used when api_lambda=true
+        if not API_LAMBDA:
+            remove_path(DOCKER_DIR / "lambda-api")
+
+
+def make_scripts_executable() -> None:
+    """Make script files executable."""
+    # Make test script executable
+    test_script = PROJECT_DIR / "test"
+    make_executable(test_script)
+
+
 def main() -> None:
     """Clean up files and directories based on cookiecutter options."""
     # Clean up placeholder directories for disabled features
     cleanup_disabled_placeholder_dirs()
+
+    # Regenerate conftest.py to ensure correct Django setup based on WEB option
+    regenerate_root_conftest()
 
     # Clean up leaked files from conditional directories (legacy fallback)
     if not API:
@@ -302,20 +379,10 @@ def main() -> None:
         cleanup_leaked_versioning_files(PACKAGE_NAME)
 
     # Clean up Docker files
-    docker_dir = PROJECT_DIR / "docker"
-    docker_compose = PROJECT_DIR / "docker-compose.yaml"
-    dockerignore = PROJECT_DIR / ".dockerignore"
+    cleanup_docker_files()
 
-    if not DOCKER:
-        remove_path(docker_dir)
-        remove_path(docker_compose)
-        remove_path(dockerignore)
-    else:
-        if not WEB:
-            remove_path(docker_dir / "web")
-
-        if not API:
-            remove_path(docker_dir / "api")
+    # Make scripts executable
+    make_scripts_executable()
 
 
 if __name__ == "__main__":

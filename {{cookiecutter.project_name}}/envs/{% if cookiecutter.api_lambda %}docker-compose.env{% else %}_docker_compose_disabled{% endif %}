@@ -1,0 +1,22 @@
+# Docker Compose environment overrides
+# Used when running the Lambda API in Docker Compose
+
+ENVIRONMENT=development
+DEBUG=true
+
+# Lambda Powertools local development settings
+AWS_REGION=us-east-1
+POWERTOOLS_SERVICE_NAME={{cookiecutter.package_name}}_api
+POWERTOOLS_LOG_LEVEL=DEBUG
+POWERTOOLS_DEV=true
+{%- if cookiecutter.api_lambda_powertools_metrics %}
+POWERTOOLS_METRICS_NAMESPACE={{cookiecutter.friendly_name}}
+{%- endif %}
+{%- if cookiecutter.api_auth %}
+
+# JWT Authentication (development only)
+JWT_SECRET_KEY=docker-compose-jwt-secret-not-for-production
+{%- endif %}
+
+# CORS for local development
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8080"]

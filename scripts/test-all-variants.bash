@@ -66,7 +66,7 @@ test_all_variants() {
     for ((i = 0; i < variant_count; i++)); do
         local name sentry_val async_val cli_val web_val api_val
         local api_auth_val api_lambda_val api_lambda_tracing_val api_lambda_metrics_val
-        local api_pagination_val api_versioning_val
+        local api_pagination_val api_versioning_val github_actions_val
 
         name=$(jq -r ".variants[$i].name" "${variants_file}")
         sentry_val=$(jq -r ".variants[$i].sentry" "${variants_file}")
@@ -80,6 +80,7 @@ test_all_variants() {
         api_lambda_metrics_val=$(jq -r ".variants[$i].api_lambda_metrics" "${variants_file}")
         api_pagination_val=$(jq -r ".variants[$i].api_pagination" "${variants_file}")
         api_versioning_val=$(jq -r ".variants[$i].api_versioning" "${variants_file}")
+        github_actions_val=$(jq -r ".variants[$i].github_actions // true" "${variants_file}")
 
         local project_name="test-${name}"
         local project_dir="${output_dir}/${project_name}"
@@ -107,15 +108,27 @@ test_all_variants() {
             --api-lambda-metrics "${api_lambda_metrics_val}" \
             --api-pagination "${api_pagination_val}" \
             --api-versioning "${api_versioning_val}" \
-            --docker "true"; then
+            --docker "true" \
+            --github-actions "${github_actions_val}"; then
             if "${SCRIPT_DIR}/install.bash" "${project_dir}"; then
                 if "${SCRIPT_DIR}/lint.bash" "${project_dir}"; then
-                    if "${SCRIPT_DIR}/test.bash" "${project_dir}"; then
-                        passed+=("${name}")
-                        echo "PASSED: ${name}"
+                    if "${SCRIPT_DIR}/test.bash" "${project_dir}" unit; then
+                        # Run integration tests only if api_lambda=true
+                        if [[ "${api_lambda_val}" == "true" ]]; then
+                            if "${SCRIPT_DIR}/test.bash" "${project_dir}" integration; then
+                                passed+=("${name}")
+                                echo "PASSED: ${name}"
+                            else
+                                failed+=("${name} (integration tests failed)")
+                                echo "FAILED: ${name} (integration tests failed)"
+                            fi
+                        else
+                            passed+=("${name}")
+                            echo "PASSED: ${name}"
+                        fi
                     else
-                        failed+=("${name} (tests failed)")
-                        echo "FAILED: ${name} (tests failed)"
+                        failed+=("${name} (unit tests failed)")
+                        echo "FAILED: ${name} (unit tests failed)"
                     fi
                 else
                     failed+=("${name} (lint failed)")

@@ -35,6 +35,7 @@ PROJECT_NAME="test-project"
 INSTALL_DEPS="true"
 RUN_TESTS="true"
 RUN_LINT="true"
+RUN_INTEGRATION="false"
 RUN_ALL_VARIANTS="true"
 CLEAN="true"
 
@@ -68,7 +69,9 @@ Options:
     -o, --output DIR             Output directory (default: ${DEFAULT_OUTPUT_DIR})
     -n, --name NAME              Project name (default: ${PROJECT_NAME})
     -i, --install                Install dependencies after generation
-    -t, --test                   Run tests after generation (implies --install)
+    -t, --test                   Run unit tests after generation (implies --install)
+    --integration                Run integration tests after unit tests (implies --test)
+                                 Requires Docker and api_lambda=true
     -l, --lint                   Run linting/type checks after generation (implies --install)
     --all-variants BOOL          Generate and test all variant combinations (default: ${RUN_ALL_VARIANTS})
     --clean                      Remove output directory before generation
@@ -177,6 +180,12 @@ main() {
                 INSTALL_DEPS="true"
                 shift
                 ;;
+            --integration)
+                RUN_INTEGRATION="true"
+                RUN_TESTS="true"
+                INSTALL_DEPS="true"
+                shift
+                ;;
             -l|--lint)
                 RUN_LINT="true"
                 INSTALL_DEPS="true"
@@ -248,7 +257,11 @@ main() {
     fi
 
     if [[ "${RUN_TESTS}" == "true" ]]; then
-        "${SCRIPT_DIR}/test.bash" "${project_dir}"
+        "${SCRIPT_DIR}/test.bash" "${project_dir}" unit
+    fi
+
+    if [[ "${RUN_INTEGRATION}" == "true" ]]; then
+        "${SCRIPT_DIR}/test.bash" "${project_dir}" integration
     fi
 
     return 0

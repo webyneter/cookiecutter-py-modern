@@ -32,7 +32,7 @@ services:
       start_period: 40s
 {%- endif %}
 
-{%- if cookiecutter.api %}
+{%- if cookiecutter.api and not cookiecutter.api_lambda %}
   api:
     build:
       context: .
@@ -66,6 +66,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+{%- endif %}
+
+{%- if cookiecutter.api_lambda %}
+  lambda-api:
+    build:
+      context: .
+      dockerfile: docker/lambda-api/Dockerfile
+      target: runtime
+    volumes:
+      - ./src:/var/task/src:ro
+    env_file:
+      - envs/base.env
+      - envs/docker-compose.env
+    ports:
+      - "9000:8080"
+    # Note: No healthcheck - Lambda Runtime Interface Emulator limitation
 {%- endif %}
 
   postgresql:

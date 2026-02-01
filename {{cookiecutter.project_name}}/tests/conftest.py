@@ -1,35 +1,29 @@
 """Pytest configuration and fixtures."""
 
 import os
+from pathlib import Path
 
-import pytest
+from dotenv import load_dotenv
 
-# Set environment variables before any imports
-os.environ.setdefault("ENVIRONMENT", "test")
-{%- if cookiecutter.sentry %}
-os.environ.setdefault("SENTRY_DSN", "")
-{%- endif %}
+# Load environment files before any other imports
+# This ensures env vars are available for module-level configuration
+_envs_dir = Path(__file__).parent.parent / "envs"
+
+# Load base environment (common settings)
+if (_base := _envs_dir / "base.env").exists():
+    load_dotenv(_base)
+
+# Load test environment (overrides base settings)
+if (_test := _envs_dir / "test.env").exists():
+    load_dotenv(_test, override=True)
 {%- if cookiecutter.web %}
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{{cookiecutter.package_name}}_web.settings")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production")
-os.environ.setdefault("DEBUG", "True")
-os.environ.setdefault("DATABASE_URL", "sqlite:///test.sqlite3")
-{%- endif %}
-{%- if cookiecutter.api %}
-os.environ.setdefault("DEBUG", "True")
-{%- if cookiecutter.api_auth %}
-os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret-not-for-production")
-{%- endif %}
-{%- endif %}
 
+# Configure Django before pytest-django tries to set up the test database
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE", "{{ cookiecutter.package_name }}_web.settings"
+)
 
-@pytest.fixture(autouse=True)
-def set_test_env_vars() -> None:
-    """Set required environment variables for testing."""
-    os.environ.setdefault("ENVIRONMENT", "test")
-    {%- if cookiecutter.sentry %}
-    os.environ.setdefault("SENTRY_DSN", "")
-    {%- endif %}
-    {%- if cookiecutter.web %}
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{{cookiecutter.package_name}}_web.settings")
-    {%- endif %}
+import django  # noqa: E402
+
+django.setup()
+{%- endif %}
