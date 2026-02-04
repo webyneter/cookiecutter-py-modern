@@ -34,7 +34,7 @@ wait_for_lambda_rie() {
     echo "Waiting for Lambda RIE to be ready..."
     while [[ ${attempt} -le ${max_attempts} ]]; do
         if curl -s http://localhost:9000/2015-03-31/functions/function/invocations \
-            -d '{"httpMethod":"GET","path":"/health","headers":{},"body":""}' 2>/dev/null | grep -q "statusCode"; then
+            -d '{"requestContext":{"elb":{"targetGroupArn":"arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/test/1234567890123456"}},"httpMethod":"GET","path":"/health","queryStringParameters":{},"headers":{"host":"localhost","accept":"application/json"},"body":"","isBase64Encoded":false}' 2>/dev/null | grep -q "statusCode"; then
             echo "Lambda RIE is ready"
             return 0
         fi
@@ -82,7 +82,7 @@ run_integration_tests() {
         fi
 
         echo "Starting Docker Compose services..."
-        docker compose up -d --build
+        docker compose up -d --build lambda-api
 
         # Wait for Lambda RIE to be ready
         if ! wait_for_lambda_rie; then
