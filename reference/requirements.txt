@@ -84,7 +84,7 @@ django==6.0
     #   django-stubs
     #   django-stubs-ext
     #   full
-django-axes==8.0.0
+django-axes==8.1.0
     # via full
 django-cors-headers==4.9.0
     # via full
