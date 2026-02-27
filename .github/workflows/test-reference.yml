@@ -58,7 +58,7 @@ jobs:
           done < <(git -C ../.. diff origin/main -- reference/requirements.txt | grep '^+[^+]' | sed 's/^+//')
 
       - name: Upload project artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: project-reference
           path: ${{ steps.generate.outputs.project-path }}
